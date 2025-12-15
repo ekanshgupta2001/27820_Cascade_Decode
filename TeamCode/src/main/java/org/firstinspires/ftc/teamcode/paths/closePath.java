@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.paths;
 
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierCurve;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
@@ -8,10 +9,11 @@ import com.pedropathing.paths.PathChain;
 import org.firstinspires.ftc.teamcode.Alliance;
 
 public class closePath {
+    //Change control points
     public Follower follower;
     public Pose start = new Pose(21.913, 123, Math.toRadians(136));
     public Pose scorefirst = new Pose(60, 84, Math.toRadians(136));
-    public Pose setFirstPick = new Pose(60, 84, Math.toRadians(180));
+    public Pose setFirstPick = new Pose(40, 84, Math.toRadians(180));
     public Pose firstPick = new Pose(16.5, 84, Math.toRadians(180));
     public Pose scoreSecond = new Pose(60, 84, Math.toRadians(136));
     public Pose setSecondPick = new Pose(45, 60, Math.toRadians(180));
@@ -48,26 +50,17 @@ public class closePath {
                 .setLinearHeadingInterpolation(start.getHeading(), scorefirst.getHeading())
                 .build();
     }
-    public PathChain setOne() {
-        return follower.pathBuilder()
-                .addPath(
-                        new BezierLine(
-                                scorefirst,
-                                setFirstPick
-                        )
-                )
-                .setLinearHeadingInterpolation(scorefirst.getHeading(), setFirstPick.getHeading())
-                .build();
-    }
     public PathChain pickOne() {
         return follower.pathBuilder()
                 .addPath(
-                        new BezierLine(
-                                setFirstPick,
+                        new BezierCurve(
+                                scorefirst,
+                                setFirstPick, //Control
                                 firstPick
                         )
                 )
-                .setLinearHeadingInterpolation(setFirstPick.getHeading(), firstPick.getHeading())
+                .setBrakingStrength(.75)
+                .setLinearHeadingInterpolation(scorefirst.getHeading(), firstPick.getHeading())
                 .build();
     }
     public PathChain scoreTwo() {
@@ -81,26 +74,17 @@ public class closePath {
                 .setLinearHeadingInterpolation(firstPick.getHeading(), scoreSecond.getHeading())
                 .build();
     }
-    public PathChain setTwo() {
-        return follower.pathBuilder()
-                .addPath(
-                        new BezierLine(
-                                scoreSecond,
-                                setSecondPick
-                        )
-                )
-                .setLinearHeadingInterpolation(scoreSecond.getHeading(), setSecondPick.getHeading())
-                .build();
-    }
     public PathChain pickTwo() {
         return follower.pathBuilder()
                 .addPath(
-                        new BezierLine(
+                        new BezierCurve(
+                                scoreSecond,
                                 setSecondPick,
                                 secondPick
                         )
                 )
-                .setLinearHeadingInterpolation(setSecondPick.getHeading(), secondPick.getHeading())
+                .setBrakingStrength(.75)
+                .setLinearHeadingInterpolation(scoreSecond.getHeading(), secondPick.getHeading())
                 .build();
     }
     public PathChain scoreThird() {
@@ -114,25 +98,16 @@ public class closePath {
                 .setLinearHeadingInterpolation(secondPick.getHeading(), thirdScore.getHeading())
                 .build();
     }
-    public PathChain setThird() {
-        return follower.pathBuilder()
-                .addPath(
-                        new BezierLine(
-                                thirdScore,
-                                setThirdPick
-                        )
-                )
-                .setLinearHeadingInterpolation(thirdScore.getHeading(), setThirdPick.getHeading())
-                .build();
-    }
     public PathChain pickThree() {
         return follower.pathBuilder()
                 .addPath(
-                        new BezierLine(
+                        new BezierCurve(
+                                thirdScore,
                                 setThirdPick,
                                 thirdPick
                         )
                 )
+                .setBrakingStrength(.75)
                 .setLinearHeadingInterpolation(setThirdPick.getHeading(), thirdPick.getHeading())
                 .build();
     }
@@ -151,15 +126,12 @@ public class closePath {
     public PathChain next() {
         switch (index++) {
             case 0: return scoreP();
-            case 1: return setOne();
-            case 2: return pickOne();
-            case 3: return scoreTwo();
-            case 4: return setTwo();
-            case 5: return pickTwo();
-            case 6: return scoreThird();
-            case 7: return setThird();
-            case 8: return pickThree();
-            case 9: return scoreFourth();
+            case 1: return pickOne();
+            case 2: return scoreTwo();
+            case 3: return pickTwo();
+            case 4: return scoreThird();
+            case 5: return pickThree();
+            case 6: return scoreFourth();
             default: return null;
         }
     }

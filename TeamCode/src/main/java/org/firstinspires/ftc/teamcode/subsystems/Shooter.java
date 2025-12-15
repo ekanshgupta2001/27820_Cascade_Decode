@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.RunCommand;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
@@ -13,19 +14,21 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.seattlesolvers.solverslib.hardware.servos.ServoEx;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 public class Shooter extends SubsystemBase {
     private Servo AH;
     private DcMotorEx S;
-    private Servo KS;
+    private ServoEx KS;
     public static double close = 1000;
     public static double far = 1375;
     public static double HUp = 0.55;
     public static double HDown = 0.15;
     public static double HZero = 0.0;
-    public static double kup = 0.6;
+    public static double kup = 100.0;
     public static double kdown = 0.0;
     public static double intakePower = -150;
     private double t = 0;
@@ -38,8 +41,7 @@ public class Shooter extends SubsystemBase {
         S = hardwareMap.get(DcMotorEx.class, "SM");
         AH = hardwareMap.get(Servo.class, "AH");
         AH.setDirection(Servo.Direction.FORWARD);
-
-        KS = hardwareMap.get(Servo.class, "KS");
+        KS = new ServoEx(hardwareMap, "KS", kup, kdown);
 
         this.intakeSubsystem = intakeSubsystem;
 
@@ -89,10 +91,10 @@ public class Shooter extends SubsystemBase {
         AH.setPosition(HZero);
     }
     public void kickUp(){
-        KS.setPosition(kup);
+        KS.set(kup);
     }
     public void kickDown(){
-        KS.setPosition(kdown);
+        KS.set(kdown);
     }
 
     public Command spinCloseCommand(){

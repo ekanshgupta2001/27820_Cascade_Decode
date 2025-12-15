@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.decode_auto;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
+import com.seattlesolvers.solverslib.command.InstantCommand;
 import com.seattlesolvers.solverslib.command.RunCommand;
 import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
 import com.seattlesolvers.solverslib.command.WaitCommand;
@@ -14,6 +15,7 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 
 import org.firstinspires.ftc.teamcode.Alliance;
+import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.teamcode.commands.FollowPath;
 import org.firstinspires.ftc.teamcode.commands.IntakeIn;
 import org.firstinspires.ftc.teamcode.commands.Shoot;
@@ -21,13 +23,15 @@ import org.firstinspires.ftc.teamcode.paths.closePath;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
+import org.firstinspires.ftc.teamcode.subsystems.ShooterWait;
 import org.firstinspires.ftc.teamcode.subsystems.Webcam;
 
 public class blueClose extends CommandOpMode {
 
     private Follower follower;
+    Robot r;
     Intake i;
-    Shooter s;
+    ShooterWait s;
     Webcam w;
     private GamepadEx driverGamepad;
     private GamepadEx operatorGamepad;
@@ -44,6 +48,7 @@ public class blueClose extends CommandOpMode {
     private boolean isIntakeInward = false;
     private boolean isIntakeOutward = false;
     private boolean isShooterActive = false;
+    private double dist = 0;
     private closePath close;
 
     @Override
@@ -52,24 +57,19 @@ public class blueClose extends CommandOpMode {
         follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
         follower.update();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
-        w = new Webcam(hardwareMap, telemetry, "Webcam 1");
-        i = new Intake(hardwareMap);
-        s = new Shooter(hardwareMap, i);
+        r = new Robot(hardwareMap, telemetry, Alliance.BLUE);
 
         close = new closePath(follower, Alliance.BLUE);
+        r.follower.setStartingPose(close.start);
 
         multipleTelemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
-        Shoot shootCommand = new Shoot(s, i);
-        shootCommand.follower = this.follower;
-
-        IntakeIn intakeCommand = new IntakeIn(i);
-
         schedule(
-                new RunCommand(follower::update),
-                new RunCommand(s::periodic),
-                new RunCommand(w::periodic),
-                new RunCommand(i::periodic),
+                new RunCommand(r::periodic),
+                new RunCommand(() -> {
+                    dist = r.getShootTarget().distanceFrom(r.follower.getPose());
+                    r.s.forDistance(dist);
+                }),
                 new RunCommand(() -> {
                     telemetry.addData("Pose", follower.getPose());
                     telemetry.addData("Follower Busy", follower.isBusy());
@@ -82,11 +82,11 @@ public class blueClose extends CommandOpMode {
                                 .alongWith(
                                         new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        s.spinCloseCommand()
+                                                        new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
-                        shootCommand,
-                        intakeCommand
+                        new Shoot(r),
+                        new IntakeIn(i)
                                 .alongWith(
                                         new FollowPath(follower, close.next())
                                 ),
@@ -94,11 +94,11 @@ public class blueClose extends CommandOpMode {
                                 .alongWith(
                                         new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        s.spinCloseCommand()
+                                                        new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
-                        shootCommand,
-                        intakeCommand
+                        new Shoot(r),
+                        new IntakeIn(i)
                                 .alongWith(
                                         new FollowPath(follower, close.next())
                                 ),
@@ -106,11 +106,11 @@ public class blueClose extends CommandOpMode {
                                 .alongWith(
                                         new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        s.spinCloseCommand()
+                                                        new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
-                        shootCommand,
-                        intakeCommand
+                        new Shoot(r),
+                        new IntakeIn(i)
                                 .alongWith(
                                         new FollowPath(follower, close.next())
                                 ),
@@ -118,11 +118,11 @@ public class blueClose extends CommandOpMode {
                                 .alongWith(
                                         new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        s.spinCloseCommand()
+                                                        new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
-                        shootCommand,
-                        intakeCommand
+                        new Shoot(r),
+                        new IntakeIn(i)
                                 .alongWith(
                                         new FollowPath(follower, close.next())
                                 ),
@@ -130,11 +130,10 @@ public class blueClose extends CommandOpMode {
                                 .alongWith(
                                         new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        s.spinCloseCommand()
+                                                        new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
-                        shootCommand
-
+                        new Shoot(r)
                 )
         );
     }

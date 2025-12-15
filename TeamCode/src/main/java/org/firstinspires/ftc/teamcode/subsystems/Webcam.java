@@ -10,6 +10,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
+import org.firstinspires.ftc.teamcode.Alliance;
+import org.firstinspires.ftc.teamcode.Robot;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
@@ -41,7 +43,7 @@ public class Webcam{
                 .setOutputUnits(DistanceUnit.CM, AngleUnit.DEGREES) //Gets the units
                 .setCameraPose(
                         new Position(DistanceUnit.INCH, 0, 8, 13, 0),
-                        new YawPitchRollAngles(AngleUnit.DEGREES, 0, 15, 0, 0)
+                        new YawPitchRollAngles(AngleUnit.DEGREES, 0, 15, 90, 0)
                 )
                 .build();
 

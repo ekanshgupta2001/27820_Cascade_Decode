@@ -18,7 +18,7 @@ public class ShooterTunerOpMode extends CommandOpMode {
 
     // You can add static variables here if you want to tune the *target* velocity
     // from this OpMode specifically, otherwise it uses the 'far' constant defined in Shooter.java
-    public static double TUNE_TARGET_VELOCITY = 1375;
+    public static double TUNE_TARGET_VELOCITY = -800;
 
     private ShooterWait shooter;
 
