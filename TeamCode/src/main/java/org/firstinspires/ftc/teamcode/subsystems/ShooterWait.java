@@ -44,7 +44,7 @@ public class ShooterWait extends SubsystemBase {
     public ShooterWait(HardwareMap hardwareMap, Intake intakeSubsystem) {
         S = hardwareMap.get(DcMotorEx.class, "SM");
         AH = hardwareMap.get(Servo.class, "AH");
-        AH.setDirection(Servo.Direction.FORWARD);
+        AH.setDirection(Servo.Direction.REVERSE);
         KS = new ServoEx(hardwareMap, "KS", kup, kdown);
 
         this.intakeSubsystem = intakeSubsystem;

@@ -29,6 +29,7 @@ public class ShooterTunerOpMode extends CommandOpMode {
     public void initialize() {
         // Initialize standard FTCLib OpMode components
         telemetryDS = new MultipleTelemetry(super.telemetry, FtcDashboard.getInstance().getTelemetry());
+        shooter.feedUp();
 
         // We can't fully initialize the Shooter subsystem because we don't have
         // an 'Intake' subsystem handy in this specific tuner OpMode.

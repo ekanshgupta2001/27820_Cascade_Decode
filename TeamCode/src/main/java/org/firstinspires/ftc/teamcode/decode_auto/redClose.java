@@ -53,18 +53,17 @@ public class redClose extends CommandOpMode {
 
     @Override
     public void initialize() {
-        follower = Constants.createFollower(hardwareMap);
-        follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
-        follower.update();
-        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
         r = new Robot(hardwareMap, telemetry, Alliance.RED);
+        r.follower = Constants.createFollower(hardwareMap);
+        r.follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
+        r.follower.update();
+        telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
-        close = new closePath(follower, Alliance.RED);
+
+        close = new closePath(r.follower, Alliance.RED);
         r.follower.setStartingPose(close.start);
 
         multipleTelemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
-
-
 
         schedule(
                 new RunCommand(r::periodic),
@@ -73,64 +72,63 @@ public class redClose extends CommandOpMode {
                     r.s.forDistance(dist);
                 }),
                 new RunCommand(() -> {
-                    telemetry.addData("Pose", follower.getPose());
-                    telemetry.addData("Follower Busy", follower.isBusy());
-                    telemetry.addData("Shooter At Target Velocity: ", s.isAtVelocity(1000));
+                    telemetry.addData("Pose", r.follower.getPose());
+                    telemetry.addData("Follower Busy", r.follower.isBusy());
                     telemetry.update();
                 }),
                 new SequentialCommandGroup(
                         new WaitCommand(1),
-                        new FollowPath(follower, close.scoreP())
+                        new FollowPath(r.follower, close.scoreP())
                                 .alongWith(
-                                        new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
+                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
                                                         new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
                         new Shoot(r),
-                        new IntakeIn(i)
+                        new IntakeIn(r.i)
                                 .alongWith(
-                                        new FollowPath(follower, close.next())
+                                        new FollowPath(r.follower, close.next())
                                 ),
-                        new FollowPath(follower, close.next())
+                        new FollowPath(r.follower, close.next())
                                 .alongWith(
-                                        new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
+                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
                                                         new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
                         new Shoot(r),
-                        new IntakeIn(i)
+                        new IntakeIn(r.i)
                                 .alongWith(
-                                        new FollowPath(follower, close.next())
+                                        new FollowPath(r.follower, close.next())
                                 ),
-                        new FollowPath(follower, close.next())
+                        new FollowPath(r.follower, close.next())
                                 .alongWith(
-                                        new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
+                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
                                                         new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
                         new Shoot(r),
-                        new IntakeIn(i)
+                        new IntakeIn(r.i)
                                 .alongWith(
-                                        new FollowPath(follower, close.next())
+                                        new FollowPath(r.follower, close.next())
                                 ),
-                        new FollowPath(follower, close.next())
+                        new FollowPath(r.follower, close.next())
                                 .alongWith(
-                                        new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
+                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
                                                         new InstantCommand(() -> s.forDistance(dist))
                                                 )
                                 ),
                         new Shoot(r),
-                        new IntakeIn(i)
+                        new IntakeIn(r.i)
                                 .alongWith(
-                                        new FollowPath(follower, close.next())
+                                        new FollowPath(r.follower, close.next())
                                 ),
-                        new FollowPath(follower, close.next())
+                        new FollowPath(r.follower, close.next())
                                 .alongWith(
-                                        new WaitUntilCommand(() -> follower.getCurrentTValue() >= 0.25)
+                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
                                                         new InstantCommand(() -> s.forDistance(dist))
                                                 )

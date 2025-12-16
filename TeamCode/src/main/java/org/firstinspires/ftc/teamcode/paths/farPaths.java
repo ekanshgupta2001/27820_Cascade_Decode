@@ -9,15 +9,16 @@ import org.firstinspires.ftc.teamcode.Alliance;
 
 public class farPaths {
     public Follower follower;
-    public Pose start = new Pose(52, 8, Math.toRadians(90));
-    public Pose scoreFirst = new Pose(52, 15, Math.toRadians(103));
-    public Pose setFirstPick = new Pose(52, 15, Math.toRadians(180));
-    public Pose firstPick = new Pose(10, 15, Math.toRadians(180));
-    public Pose scoreSecond = new Pose(52, 15, Math.toRadians(103));
-    public Pose setSecondPick = new Pose(52, 15, Math.toRadians(180));
-    public Pose secondPick = new Pose(10, 15, Math.toRadians(180));
-    public Pose thirdScore = new Pose(52, 15, Math.toRadians(103));
-    public Pose park = new Pose(52, 33, Math.toRadians(90));
+    public Pose start = new Pose(56, 8, Math.toRadians(90));
+    public Pose scoreFirst = new Pose(56, 15, Math.toRadians(108));
+    public Pose setFirstPick = new Pose(40, 36, Math.toRadians(180));
+    public Pose firstPick = new Pose(6, 36, Math.toRadians(180));
+    public Pose scoreSecond = new Pose(56, 15, Math.toRadians(108));
+    public Pose setSecondPick = new Pose(9, 13, Math.toRadians(180));
+    public Pose secondPick = new Pose(9, 6, Math.toRadians(180));
+    public Pose thirdScore = new Pose(56, 15, Math.toRadians(108));
+    public Pose park = new Pose(38, 12, Math.toRadians(90));
+    private int index;
 
     public farPaths(Follower follower, Alliance alliance) {
         this.follower = follower;
@@ -122,6 +123,27 @@ public class farPaths {
                 )
                 .setLinearHeadingInterpolation(thirdScore.getHeading(), park.getHeading())
                 .build();
+    }
+
+    public PathChain next() {
+        switch (index++) {
+            case 0: return scoreP();
+            case 1: return setOne();
+            case 2: return pickOne();
+            case 3: return scoreTwo();
+            case 4: return setTwo();
+            case 5: return pickTwo();
+            case 6: return scoreThird();
+            case 7: return parkPath();
+            default: return null;
+        }
+    }
+    public boolean hasNext() {
+        int PATH_COUNT = 9;
+        return index < PATH_COUNT;
+    }
+    public void reset() {
+        index = 0;
     }
 
 

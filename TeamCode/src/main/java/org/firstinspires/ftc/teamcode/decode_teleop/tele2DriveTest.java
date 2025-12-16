@@ -39,6 +39,7 @@ public class tele2DriveTest extends OpMode {
     private boolean isIntakeInward = false;
     private boolean isIntakeOutward = false;
     private boolean isShooterActive = false;
+    private boolean automatedDrive;
     private final Timer shoot = new Timer();
     private final Timer kick = new Timer();
     private int shootState = 0;
@@ -76,8 +77,6 @@ public class tele2DriveTest extends OpMode {
             r.setAlliance(Alliance.RED);
             telemetry.addLine("Red Tag Found");
             indicatorLight.setPosition(0.61);
-
-
         }
     }
 
@@ -107,6 +106,11 @@ public class tele2DriveTest extends OpMode {
 
         lastRightBumperState = operatorGamepad.isDown(GamepadKeys.Button.RIGHT_BUMPER);
         lastLeftBumperState = operatorGamepad.isDown(GamepadKeys.Button.LEFT_BUMPER);
+
+        if (driverGamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER) && driverGamepad.wasJustPressed(GamepadKeys.Button.LEFT_BUMPER)){
+            automatedDrive = !automatedDrive;
+            gamepad1.rumble(400);
+        }
 
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
             isShooterActive = true;
@@ -149,21 +153,27 @@ public class tele2DriveTest extends OpMode {
             gamepad1.rumbleBlips(2);
         }
 
-        if (!slowModeActive)
-            r.follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y,
-                    -gamepad1.left_stick_x,
-                    -gamepad1.right_stick_x,
-                    true
-            );
+        if (!automatedDrive){
+            if (!slowModeActive)
+                r.follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y,
+                        -gamepad1.left_stick_x,
+                        -gamepad1.right_stick_x,
+                        false
+                );
 
-        if (slowModeActive)
-            r.follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y * adjustSpeed,
-                    -gamepad1.left_stick_x * adjustSpeed,
-                    -gamepad1.right_stick_x * adjustSpeed,
-                    true
-            );
+            if (slowModeActive)
+                r.follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y * adjustSpeed,
+                        -gamepad1.left_stick_x * adjustSpeed,
+                        -gamepad1.right_stick_x * adjustSpeed,
+                        false
+                );
+        }
+
+        if (automatedDrive){
+            r.startParkingPath();
+        }
 
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT) && adjustSpeed <= 1.0) {
             adjustSpeed += 0.2;

@@ -12,16 +12,17 @@ public class closePath {
     //Change control points
     public Follower follower;
     public Pose start = new Pose(21.913, 123, Math.toRadians(136));
-    public Pose scorefirst = new Pose(60, 84, Math.toRadians(136));
-    public Pose setFirstPick = new Pose(40, 84, Math.toRadians(180));
+    public Pose scorefirst = new Pose(45, 100, Math.toRadians(136));
+    public Pose setFirstPick = new Pose(60, 80, Math.toRadians(180));
     public Pose firstPick = new Pose(16.5, 84, Math.toRadians(180));
-    public Pose scoreSecond = new Pose(60, 84, Math.toRadians(136));
-    public Pose setSecondPick = new Pose(45, 60, Math.toRadians(180));
+    public Pose scoreSecond = new Pose(45, 100, Math.toRadians(136));
+    public Pose setSecondPick = new Pose(90, 57, Math.toRadians(180));
     public Pose secondPick = new Pose(10, 60, Math.toRadians(180));
-    public Pose thirdScore = new Pose(45, 60, Math.toRadians(145));
-    public Pose setThirdPick = new Pose(60, 84, Math.toRadians(136));
+    public Pose setThirdScore = new Pose(45, 57, Math.toRadians(136));
+    public Pose thirdScore = new Pose(45, 100, Math.toRadians(136));
+    public Pose setThirdPick = new Pose(90, 27, Math.toRadians(136));
     public Pose thirdPick = new Pose(10, 36, Math.toRadians(180));
-    public Pose fourthScore = new Pose(60, 84, Math.toRadians(136));
+    public Pose fourthScore = new Pose(45, 100, Math.toRadians(136));
     private int index;
     public closePath(Follower follower, Alliance alliance) {
         this.follower = follower;
@@ -90,8 +91,9 @@ public class closePath {
     public PathChain scoreThird() {
         return follower.pathBuilder()
                 .addPath(
-                        new BezierLine(
+                        new BezierCurve(
                                 secondPick,
+                                setThirdScore,
                                 thirdScore
                         )
                 )

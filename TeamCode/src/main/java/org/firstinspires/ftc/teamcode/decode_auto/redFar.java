@@ -20,48 +20,31 @@ import org.firstinspires.ftc.teamcode.commands.FollowPath;
 import org.firstinspires.ftc.teamcode.commands.IntakeIn;
 import org.firstinspires.ftc.teamcode.commands.Shoot;
 import org.firstinspires.ftc.teamcode.paths.closePath;
+import org.firstinspires.ftc.teamcode.paths.farPaths;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterWait;
 import org.firstinspires.ftc.teamcode.subsystems.Webcam;
 
-public class blueClose extends CommandOpMode {
-
-    private Follower follower;
+public class redFar extends CommandOpMode {
     Robot r;
-    Intake i;
-    ShooterWait s;
-    Webcam w;
-    private GamepadEx driverGamepad;
-    private GamepadEx operatorGamepad;
-    MultipleTelemetry multipleTelemetry;
-    private final int RED_SCORE_ZONE_ID = 24;
-    private final int BLUE_SCORE_ZONE_ID = 20;
     public static Pose startingPose;
-    double distance = -1;
+    MultipleTelemetry multipleTelemetry;
     private TelemetryManager telemetryM;
-    private boolean slowModeActive = false;
-    private double adjustSpeed = 0.25;
-    private boolean lastRightBumperState = false;
-    private boolean lastLeftBumperState = false;
-    private boolean isIntakeInward = false;
-    private boolean isIntakeOutward = false;
-    private boolean isShooterActive = false;
     private double dist = 0;
-    private closePath close;
+    private farPaths far;
 
     @Override
     public void initialize() {
-        r = new Robot(hardwareMap, telemetry, Alliance.BLUE);
+        r = new Robot(hardwareMap, telemetry, Alliance.RED);
         r.follower = Constants.createFollower(hardwareMap);
         r.follower.setStartingPose(startingPose == null ? new Pose() : startingPose);
         r.follower.update();
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
 
-
-        close = new closePath(r.follower, Alliance.BLUE);
-        r.follower.setStartingPose(close.start);
+        far = new farPaths(r.follower, Alliance.RED);
+        r.follower.setStartingPose(far.start);
 
         multipleTelemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
 
@@ -74,68 +57,56 @@ public class blueClose extends CommandOpMode {
                 new RunCommand(() -> {
                     telemetry.addData("Pose", r.follower.getPose());
                     telemetry.addData("Follower Busy", r.follower.isBusy());
+                    telemetry.addData("Shooter At Target Velocity: ", r.s.isAtVelocity(1000));
                     telemetry.update();
                 }),
                 new SequentialCommandGroup(
                         new WaitCommand(1),
-                        new FollowPath(r.follower, close.scoreP())
+                        new FollowPath(r.follower, far.scoreP())
                                 .alongWith(
+                                        new RunCommand(r.i::idleCommand),
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        new InstantCommand(() -> s.forDistance(dist))
+                                                        new InstantCommand(() -> r.s.forDistance(dist))
                                                 )
                                 ),
                         new Shoot(r),
-                        new IntakeIn(r.i)
+                        new IntakeIn(r.i),
+                        new FollowPath(r.follower, far.next()),
+                        new FollowPath(r.follower, far.next()),
+                        new FollowPath(r.follower, far.next())
                                 .alongWith(
-                                        new FollowPath(r.follower, close.next())
-                                ),
-                        new FollowPath(r.follower, close.next())
-                                .alongWith(
+                                        new RunCommand(r.i::idleCommand),
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        new InstantCommand(() -> s.forDistance(dist))
+                                                        new InstantCommand(() -> r.s.forDistance(dist))
                                                 )
+
                                 ),
                         new Shoot(r),
-                        new IntakeIn(r.i)
+                        new FollowPath(r.follower, far.next()),
+                        new FollowPath(r.follower, far.next()),
+                        new FollowPath(r.follower, far.next())
                                 .alongWith(
-                                        new FollowPath(r.follower, close.next())
-                                ),
-                        new FollowPath(r.follower, close.next())
-                                .alongWith(
+                                        new RunCommand(r.i::idleCommand),
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(
-                                                        new InstantCommand(() -> s.forDistance(dist))
+                                                        new InstantCommand(() -> r.s.forDistance(dist))
                                                 )
+
                                 ),
                         new Shoot(r),
-                        new IntakeIn(r.i)
-                                .alongWith(
-                                        new FollowPath(r.follower, close.next())
-                                ),
-                        new FollowPath(r.follower, close.next())
-                                .alongWith(
-                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
-                                                .andThen(
-                                                        new InstantCommand(() -> s.forDistance(dist))
-                                                )
-                                ),
-                        new Shoot(r),
-                        new IntakeIn(r.i)
-                                .alongWith(
-                                        new FollowPath(r.follower, close.next())
-                                ),
-                        new FollowPath(r.follower, close.next())
-                                .alongWith(
-                                        new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
-                                                .andThen(
-                                                        new InstantCommand(() -> s.forDistance(dist))
-                                                )
-                                ),
-                        new Shoot(r)
+                        new FollowPath(r.follower, far.next()),
+                        new RunCommand(r.i::idleCommand),
+                        new RunCommand(r.s::feedZero),
+                        new RunCommand(r.s::stopMotor)
                 )
         );
+    }
+
+    @Override
+    public void end(){
+        r.stop();
     }
 
 }
