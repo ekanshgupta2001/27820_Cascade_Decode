@@ -22,13 +22,13 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class ShooterWait extends SubsystemBase {
     private Servo AH;
     private DcMotorEx S;
-    private ServoEx KS;
+    private Servo KS;
     public static double close = -350;
     public static double far = -600;
     public static double HUp = 0.55;
     public static double HDown = 0.15;
     public static double HZero = 0.0;
-    public static double kup = 50;
+    public static double kup = 0.167;
     public static double kdown = 0.0;
     public static double intakePower = -150;
     public static double kS = 0.0;
@@ -45,7 +45,7 @@ public class ShooterWait extends SubsystemBase {
         S = hardwareMap.get(DcMotorEx.class, "SM");
         AH = hardwareMap.get(Servo.class, "AH");
         AH.setDirection(Servo.Direction.REVERSE);
-        KS = new ServoEx(hardwareMap, "KS", kup, kdown);
+        KS = hardwareMap.get(Servo.class, "KS");
 
         this.intakeSubsystem = intakeSubsystem;
 
@@ -74,10 +74,10 @@ public class ShooterWait extends SubsystemBase {
     }
 
     public void kickUp(){
-        KS.set(kup);
+        KS.setPosition(kup);
     }
     public void kickDown(){
-        KS.set(kdown);
+        KS.setPosition(kdown);
     }
 
     public void stopMotor(){
@@ -89,18 +89,19 @@ public class ShooterWait extends SubsystemBase {
     public void periodic() {
         double currentVelocity = getVelocity();
         double targetVelocity = getTarget();
-        double power = ((kV * getTarget()) + (kP * (getTarget() - getVelocity())) + kS);
+//        double power = ((kV * getTarget()) + (kP * (getTarget() - getVelocity())) + kS);
 
         if (activate) {
-            S.setPower(power);
+            S.setVelocity(t);
         }
-
-
+        else {
+            S.setPower(0);
+        }
 
         if (telemetryM != null) {
             telemetryM.addData("Shooter Target", targetVelocity);
             telemetryM.addData("Shooter Actual", currentVelocity);
-            telemetryM.addData("Calculated Power", power);
+            telemetryM.addData("Calculated Power", t);
         }
     }
 
@@ -120,7 +121,7 @@ public class ShooterWait extends SubsystemBase {
 
     public void forDistance(double distance){
         //THIS NEEDS TO BE TUNED, A, B and C values need to be figured out
-        setTarget((Math.pow(distance, 2))+(distance));
+        setTarget(0.01*(Math.pow(distance, 2))+(distance));
         activate = true;
     }
 

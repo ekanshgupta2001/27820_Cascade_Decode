@@ -5,6 +5,7 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
+import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.qualcomm.hardware.lynx.LynxModule;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -28,7 +29,7 @@ public class Robot {
     private final LynxModule hub;
     private final Timer loop = new Timer();
     public static Pose endPose;
-    public static Pose parkPose;
+    public static Pose parkPose = new Pose(43.53265717273622, 4.069461071585107, 101.881785924254);;
     public static Pose shootTarget = new Pose(6, 138, 0);
 
     public Robot(HardwareMap h, Telemetry telemetry, Alliance a) {
@@ -76,10 +77,10 @@ public class Robot {
 
     public void park(){
         if (a == Alliance.BLUE){
-            parkPose = new Pose(38.608695652173914, 33.39130434782609, 90);
+            parkPose = new Pose(43.53265717273622, 4.069461071585107, 101.881785924254);
         }
         else if (a == Alliance.RED){
-            parkPose = new Pose(105.3913043478261, 33.18260869565218, 90);
+            parkPose.mirror();
         }
 
         parkBot = () -> follower.pathBuilder()

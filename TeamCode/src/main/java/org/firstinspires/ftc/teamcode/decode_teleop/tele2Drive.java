@@ -19,7 +19,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.Webcam;
 
-@TeleOp
+//@TeleOp
 @Config
 public class tele2Drive extends OpMode {
     private Follower follower;

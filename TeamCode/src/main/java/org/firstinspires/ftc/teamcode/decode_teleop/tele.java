@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.Webcam;
 
-@TeleOp
+//@TeleOp
 public class tele extends OpMode{
     private Follower follower;
     Intake i;
