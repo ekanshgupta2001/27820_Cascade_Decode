@@ -121,7 +121,7 @@ public class ShooterWait extends SubsystemBase {
 
     public void forDistance(double distance){
         //THIS NEEDS TO BE TUNED, A, B and C values need to be figured out
-        setTarget(0.01*(Math.pow(distance, 2))+(distance));
+        setTarget(0.001*(Math.pow(distance, 2))+(distance));
         activate = true;
     }
 
