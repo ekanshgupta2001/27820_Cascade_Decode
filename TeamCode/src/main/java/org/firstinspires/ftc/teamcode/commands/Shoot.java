@@ -5,68 +5,62 @@ import com.pedropathing.util.Timer;
 import com.seattlesolvers.solverslib.command.CommandBase;
 
 import org.firstinspires.ftc.teamcode.Robot;
-import org.firstinspires.ftc.teamcode.subsystems.Intake;
-import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.ShooterWait;
 
 public class Shoot extends CommandBase {
-    Robot r;
-    public Follower follower;
+    private final Robot r;
+    private final Follower follower;
+
     private int st = 0;
-    private Timer t = new Timer();
+    private final Timer t = new Timer();
+
+    // This is the target speed this command shoots at (tune later).
+    private static final double TARGET_VEL = 200;
 
     public Shoot(Robot r) {
+        // This command runs a full “spin up -> kick -> feed -> done” shooting cycle.
         this.r = r;
+        this.follower = r.follower;
+        addRequirements(r.s, r.i);
     }
 
     @Override
-    public void initialize(){
+    public void initialize() {
+        // This resets state/timer so each shot is consistent.
         setState(0);
     }
 
     @Override
-    public void execute(){
-        switch (st){
+    public void execute() {
+        switch (st) {
             case 0:
+                // This sets hood and starts spinning shooter.
                 r.s.feedUp();
-                r.s.setTarget(200);
+                r.s.setTarget(TARGET_VEL); // setTarget() now activates shooter in ShooterWait
                 setState(1);
                 break;
+
             case 1:
-                if (r.s.isAtVelocity(200)){
+                // This waits until we’re basically at speed before feeding.
+                if (r.s.isAtVelocity(TARGET_VEL)) {
                     setState(2);
                 }
                 break;
+
             case 2:
-                if (t.getElapsedTime() > 0){
-                    r.s.kickUp();
-                }
-                if (t.getElapsedTime() > 0.3){
-                    r.s.kickDown();
-                }
-                if (t.getElapsedTime() > 0.6){
-                    r.i.spinIn();
-                }
-                if (t.getElapsedTime() > 0.9){
-                    r.i.spinIdle();
-                    r.s.kickUp();
-                }
-                if (t.getElapsedTime() > 1.2){
-                    r.s.kickDown();
-                }
-                if (t.getElapsedTime() > 1.5){
-                    r.i.spinIn();
-                }
-                if (t.getElapsedTime() > 1.8){
-                    r.i.spinIdle();
-                    r.s.kickUp();
-                }
-                if (t.getElapsedTime() > 2.1){
-                    r.s.kickDown();
-                }
+                // This is the timed kick/feed sequence (single cycle).
+                double e = t.getElapsedTime();
+
+                if (e > 0.00) r.s.kickUp();
+                if (e > 0.30) r.s.kickDown();
+                if (e > 0.60) r.i.spinIn();
+                if (e > 0.90) r.i.spinIdle();
+
+                if (e > 1.10) setState(3);
                 break;
+
             case 3:
-                if (t.getElapsedTime() > 2.15 && !follower.isBusy()){
+                // This ends once we’re done and follower isn’t busy (optional).
+                if (!follower.isBusy()) {
                     setState(-1);
                 }
                 break;
@@ -75,11 +69,21 @@ public class Shoot extends CommandBase {
 
     @Override
     public boolean isFinished() {
+        // This ends when state machine says we’re done.
         return st == -1;
     }
 
-    private void setState(int i) {
-        st = i;
+    @Override
+    public void end(boolean interrupted) {
+        // This leaves the robot in a safe “not shooting” state.
+        r.i.spinIdle();
+        r.s.kickDown();
+        r.s.stopMotor();
+    }
+
+    private void setState(int state) {
+        // This changes states cleanly and restarts the timer for that state.
+        st = state;
         t.resetTimer();
     }
 }
