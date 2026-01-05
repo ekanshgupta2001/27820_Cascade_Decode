@@ -1,133 +1,145 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.config.Config;
-import com.seattlesolvers.solverslib.command.Command;
-import com.seattlesolvers.solverslib.command.RunCommand;
-import com.seattlesolvers.solverslib.command.SequentialCommandGroup;
-import com.seattlesolvers.solverslib.command.SubsystemBase;
-import com.seattlesolvers.solverslib.command.WaitCommand;
-import com.seattlesolvers.solverslib.command.WaitUntilCommand;
-import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
-import com.seattlesolvers.solverslib.hardware.servos.ServoEx;
+import com.seattlesolvers.solverslib.command.SubsystemBase;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
 @Config
 public class ShooterWait extends SubsystemBase {
-    private Servo AH;
-    private DcMotorEx S;
-    private Servo KS;
-    public static double close = -350;
-    public static double far = -600;
+    private final Servo AH;     // Adjust hood / feeder servo
+    private final Servo KS;     // Kick servo
+    private final DcMotorEx S;  // Shooter motor
+
+    // These should be POSITIVE values; we flip motor direction once, not targets.
+    public static double close = 350;
+    public static double far = 600;
+    public static double intakePower = 150;
+
     public static double HUp = 0.55;
     public static double HDown = 0.15;
     public static double HZero = 0.0;
+
     public static double kup = 0.167;
     public static double kdown = 0.0;
-    public static double intakePower = -150;
-    public static double kS = 0.0;
-    public static double kV = 0.0;
-    public static double kP = 0.0;
+
+    // This is the shooter target velocity we’re aiming for.
+    private double targetVel = 0;
+
+    // This decides if we’re actively trying to control shooter speed.
     public static boolean activate = false;
-    private double t = 0;
+
     private final Intake intakeSubsystem;
-    private TelemetryManager telemetryM;
-    private Timer actionTimer;
-    private boolean actionIsRunning = false;
 
     public ShooterWait(HardwareMap hardwareMap, Intake intakeSubsystem) {
+        // This maps hardware names from RC config.
         S = hardwareMap.get(DcMotorEx.class, "SM");
         AH = hardwareMap.get(Servo.class, "AH");
-        AH.setDirection(Servo.Direction.REVERSE);
         KS = hardwareMap.get(Servo.class, "KS");
+
+        // This is just how your servo was set up before; keep if it matches your robot.
+        AH.setDirection(Servo.Direction.REVERSE);
 
         this.intakeSubsystem = intakeSubsystem;
 
+        // This sets motor behavior so velocity control is consistent.
         S.setDirection(DcMotorSimple.Direction.REVERSE);
         S.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 
-    public void spinClose(){
+    public void spinClose() {
+        // This spins shooter to the close preset velocity.
         setTarget(close);
     }
-    public void setTarget(double velocity) {
-        t = velocity;
-    }
-    public double getTarget() {
-        return t;
-    }
-    public double getVelocity() {
-        return S.getVelocity();
-    }
-    public void spinFar(){
+
+    public void spinFar() {
+        // This spins shooter to the far preset velocity.
         setTarget(far);
     }
-    public void intake(){
+
+    public void intake() {
+        // This spins shooter at a slower “intake/feed” speed.
         setTarget(intakePower);
     }
 
-    public void kickUp(){
+    public void setTarget(double velocity) {
+        // This updates target velocity and enables shooter control immediately.
+        targetVel = velocity;
+        activate = (Math.abs(velocity) > 1e-6);
+    }
+
+    public double getTarget() {
+        // This returns what we’re currently trying to hit.
+        return targetVel;
+    }
+
+    public double getVelocity() {
+        // This returns the actual motor velocity.
+        return S.getVelocity();
+    }
+
+    public void stopMotor() {
+        // This stops shooter cleanly and disables velocity control.
+        setTarget(0);
+        activate = false;
+        S.setPower(0);
+    }
+
+    public void kickUp() {
+        // This pushes the artifact into the shooter.
         KS.setPosition(kup);
     }
-    public void kickDown(){
+
+    public void kickDown() {
+        // This retracts the kicker so the next artifact can stage.
         KS.setPosition(kdown);
     }
 
-    public void stopMotor(){
-        setTarget(0);
-        activate = false;
+    public void feedUp() {
+        // This moves the hood/feeder up.
+        AH.setPosition(HUp);
+    }
+
+    public void feedDown() {
+        // This moves the hood/feeder down.
+        AH.setPosition(HDown);
+    }
+
+    public void feedZero() {
+        // This sets hood/feeder to a “neutral” default.
+        AH.setPosition(HZero);
+    }
+
+    public boolean isAtVelocity(double targetVelocity) {
+        // This checks if we’re close enough to speed (tune the tolerance later).
+        return Math.abs(targetVelocity - getVelocity()) < 50;
+    }
+
+    public void forDistance(double distance) {
+        // This is your distance-based velocity idea (still needs tuning), but now it’s safe.
+        double vel = 0.001 * (Math.pow(distance, 2)) + distance;
+        setTarget(vel);
     }
 
     @Override
     public void periodic() {
-        double currentVelocity = getVelocity();
-        double targetVelocity = getTarget();
-//        double power = ((kV * getTarget()) + (kP * (getTarget() - getVelocity())) + kS);
-
-        if (activate) {
-            S.setVelocity(t);
-        }
-        else {
-            S.setPower(0);
-        }
-
-        if (telemetryM != null) {
-            telemetryM.addData("Shooter Target", targetVelocity);
-            telemetryM.addData("Shooter Actual", currentVelocity);
-            telemetryM.addData("Calculated Power", t);
-        }
-    }
-
-    public void feedUp(){
-        AH.setPosition(HUp);
-    }
-
-    public void feedDown(){
-        AH.setPosition(HDown);
-    }
-    public void feedZero(){
-        AH.setPosition(HZero);
-    }
-    public boolean isAtVelocity(double targetVelocity) {
-        return Math.abs((getTarget()- getVelocity())) < 50;
-    }
-
-    public void forDistance(double distance){
-        //THIS NEEDS TO BE TUNED, A, B and C values need to be figured out
-        setTarget(0.01*(Math.pow(distance, 2))+(distance));
-        activate = true;
+        // This actually applies motor velocity control if activate is true.
+        if (activate) S.setVelocity(targetVel);
+        else S.setPower(0);
     }
 
     public void getTelemetryData(Telemetry telemetry) {
+        // This prints shooter info to help debug in matches.
         telemetry.addData("Shooter Velocity (actual)", S.getVelocity());
-        telemetry.addData("Target Close Velocity", close);
-        telemetry.addData("Target Far Velocity", far);
+        telemetry.addData("Shooter Target", targetVel);
+        telemetry.addData("Target Close", close);
+        telemetry.addData("Target Far", far);
     }
 }

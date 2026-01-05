@@ -1,83 +1,103 @@
-package org.firstinspires.ftc.teamcode.subsystems; // Adjust this package name to match your project
+package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.seattlesolvers.solverslib.command.CommandOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
-// The @Config annotation allows you to tune the static variables in Shooter.java
-// directly from the FTC Dashboard web interface while the robot is running.
 @Config
-@TeleOp(name = "Shooter Tuner")
-public class ShooterTunerOpMode extends CommandOpMode {
+@TeleOp(name = "Shooter Tuner", group = "Tuning")
+public class ShooterTunerOpMode extends OpMode {
 
-    // You can add static variables here if you want to tune the *target* velocity
-    // from this OpMode specifically, otherwise it uses the 'far' constant defined in Shooter.java
-    public static double TUNE_TARGET_VELOCITY = -800;
+    // This is the velocity we’re trying to hit (ticks/sec for getVelocity()).
+    public static double TARGET_VELOCITY = 600;
 
-    private ShooterWait shooter;
+    // This switches between using setVelocity() (built-in PIDF) vs manual setPower math.
+    public static boolean USE_BUILT_IN_VELOCITY = true;
 
-    // We create a local instance of Telemetry to send data to the Dashboard and Driver Station
-    private Telemetry telemetryDS;
+    // These PIDF values are for the motor’s built-in velocity controller.
+    public static double VEL_kP = 0.0;
+    public static double VEL_kI = 0.0;
+    public static double VEL_kD = 0.0;
+    public static double VEL_kF = 0.0;
+
+    // These are for manual feedforward + P control (only used if USE_BUILT_IN_VELOCITY = false).
+    public static double MAN_kS = 0.0;
+    public static double MAN_kV = 0.0;
+    public static double MAN_kP = 0.0;
+
+    // This clamps power so we don’t accidentally send something insane.
+    public static double MAX_POWER = 1.0;
+
+    private DcMotorEx motorS;
+    private Telemetry tele;
 
     @Override
-    public void initialize() {
-        // Initialize standard FTCLib OpMode components
-        telemetryDS = new MultipleTelemetry(super.telemetry, FtcDashboard.getInstance().getTelemetry());
-        shooter.feedUp();
+    public void init() {
+        // This sets up telemetry for Driver Station + Dashboard at the same time.
+        tele = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
-        // We can't fully initialize the Shooter subsystem because we don't have
-        // an 'Intake' subsystem handy in this specific tuner OpMode.
-        // Instead, we will grab the motor reference manually to run the control loop.
+        // This grabs the shooter motor once (don’t re-get it every loop).
+        motorS = hardwareMap.get(DcMotorEx.class, "SM");
 
-        // Initialize hardware manually for simple tuning purposes
-        DcMotorEx motorS = hardwareMap.get(DcMotorEx.class, "SM");
+        // This makes sure velocity readings actually work.
+        motorS.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         motorS.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // You'll need to initialize your Shooter class slightly differently if you want to use
-        // the full class structure. For a simple tuner, running the loop manually is easier.
-
-        // We will manage the control loop logic directly in the run() method of this OpMode
-        // instead of relying on the SubsystemBase's periodic() method here.
-
-        // Initialize our target velocity
-        Shooter.far = TUNE_TARGET_VELOCITY;
-
-        telemetryDS.addData("Status", "Initialized. Connect to FTC Dashboard to tune values.");
-        telemetryDS.update();
+        tele.addData("Status", "Initialized. Open FTC Dashboard and tune values.");
+        tele.update();
     }
 
     @Override
-    public void run() {
-        // This runs repeatedly after INIT is pressed and then START
+    public void start() {
+        // This is just a clean start so we don’t keep old power/velocity commands.
+        motorS.setPower(0);
+    }
 
-        // Manual implementation of the control loop for tuning feedback:
+    @Override
+    public void loop() {
+        // This is the current measured velocity (ticks/sec).
+        double actualVel = motorS.getVelocity();
+        double targetVel = TARGET_VELOCITY;
 
-        DcMotorEx motorS = hardwareMap.get(DcMotorEx.class, "SM"); // Re-access motor here
+        if (USE_BUILT_IN_VELOCITY) {
+            // This uses the built-in motor controller PIDF for velocity control.
+            motorS.setVelocityPIDFCoefficients(VEL_kP, VEL_kI, VEL_kD, VEL_kF);
+            motorS.setVelocity(targetVel);
+        } else {
+            // This is a simple manual controller: kS + kV*target + kP*error -> power.
+            double error = targetVel - actualVel;
+            double power = (MAN_kV * targetVel) + (MAN_kP * error) + MAN_kS;
+            power = clip(power, -MAX_POWER, MAX_POWER);
+            motorS.setPower(power);
+        }
 
-        double currentVelocity = motorS.getVelocity();
-        double targetVelocity = TUNE_TARGET_VELOCITY;
+        // This prints the stuff you actually care about while tuning.
+        tele.addData("Mode", USE_BUILT_IN_VELOCITY ? "Built-in setVelocity()" : "Manual setPower()");
+        tele.addData("Target Vel", targetVel);
+        tele.addData("Actual Vel", actualVel);
+        tele.addData("Error", targetVel - actualVel);
 
-        double error = targetVelocity - currentVelocity;
+        tele.addData("BuiltIn kP/kI/kD/kF", "%.4f  %.4f  %.4f  %.4f", VEL_kP, VEL_kI, VEL_kD, VEL_kF);
+        tele.addData("Manual kS/kV/kP", "%.4f  %.6f  %.6f", MAN_kS, MAN_kV, MAN_kP);
+        tele.addData("Max Power", MAX_POWER);
 
-        // Calculate the power using the static K values defined in your Shooter class
-        double power = (ShooterWait.kV * targetVelocity) + (ShooterWait.kP * error) + ShooterWait.kS;
+        tele.update();
+    }
 
-        // Apply the calculated power
-        motorS.setPower(power);
+    @Override
+    public void stop() {
+        // This stops the motor at the end so it doesn’t keep spinning.
+        motorS.setPower(0);
+    }
 
-        // Send data to the Driver Station and FTC Dashboard
-        telemetryDS.addData("Target Velocity", targetVelocity);
-        telemetryDS.addData("Actual Velocity", currentVelocity);
-        telemetryDS.addData("Calculated Power", power);
-        telemetryDS.addData("kP", ShooterWait.kP);
-        telemetryDS.addData("kV", ShooterWait.kV);
-        telemetryDS.addData("kS", ShooterWait.kS);
-        telemetryDS.update();
+    // This is a tiny helper so we keep values inside a safe range.
+    private double clip(double v, double lo, double hi) {
+        return Math.max(lo, Math.min(hi, v));
     }
 }

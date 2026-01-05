@@ -3,130 +3,140 @@ package org.firstinspires.ftc.teamcode.decode_teleop;
 import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.seattlesolvers.solverslib.command.CommandScheduler;
-import com.seattlesolvers.solverslib.gamepad.GamepadEx;
-import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.seattlesolvers.solverslib.command.CommandScheduler;
+import com.seattlesolvers.solverslib.gamepad.GamepadEx;
+import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
+
 import org.firstinspires.ftc.teamcode.Alliance;
 import org.firstinspires.ftc.teamcode.Robot;
-import com.pedropathing.util.Timer;
 
 @TeleOp
 @Config
 public class tele2 extends OpMode {
     Robot r;
-    private Servo indicatorLight;
-    private double currentLightPos = 0.0;
+
+    // This is the goBILDA headlight (PWM controlled), so it should be CRServo-style power.
+    private CRServo indicatorLight;
+    private double currentLightPower = 0.0;
+
     private GamepadEx driverGamepad;
     private GamepadEx operatorGamepad;
+
     MultipleTelemetry multipleTelemetry;
+    private TelemetryManager telemetryM;
+
     private final int RED_SCORE_ZONE_ID = 24;
     private final int BLUE_SCORE_ZONE_ID = 20;
-    private TelemetryManager telemetryM;
+
     private boolean slowModeActive = false;
     private double adjustSpeed = 0.25;
+
     private boolean isIntakeInward = false;
     private boolean isIntakeOutward = false;
     private boolean isShooterActive = false;
+
     private final Timer shoot = new Timer();
-    private final Timer kick = new Timer();
+
     public double dist;
 
     @Override
     public void init() {
+        // This builds our robot and defaults alliance to BLUE (we can change it in init loop).
         r = new Robot(hardwareMap, telemetry, Alliance.BLUE);
-        indicatorLight = hardwareMap.get(Servo.class, "IL");
+
+        // This maps the headlight PWM device as a CRServo (power is -1..1).
+        indicatorLight = hardwareMap.get(CRServo.class, "IL");
+
         multipleTelemetry = new MultipleTelemetry(FtcDashboard.getInstance().getTelemetry());
         telemetryM = PanelsTelemetry.INSTANCE.getTelemetry();
+
         driverGamepad = new GamepadEx(gamepad1);
         operatorGamepad = new GamepadEx(gamepad2);
     }
 
     @Override
     public void init_loop() {
+        // This reads button edge events during init so alliance/tag selection is clean.
         driverGamepad.readButtons();
         operatorGamepad.readButtons();
 
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
             r.w.setTargetTagID(BLUE_SCORE_ZONE_ID);
             r.setAlliance(Alliance.BLUE);
-            setLightPosition(0.87);
+            setLightPower(0.6); // “blue vibe”
         }
+
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.w.setTargetTagID(RED_SCORE_ZONE_ID);
             r.setAlliance(Alliance.RED);
-            setLightPosition(0.61);
+            setLightPower(-0.6); // “red vibe”
         }
     }
 
     @Override
     public void start() {
+        // This sets a valid starting pose no matter what, so Pedro never crashes.
+        Pose startPose = new Pose(12, 12, 0); // TODO: replace with your real start pose
         if (r.w.isTagVisible(r.w.getTargetTagID())) {
             Pose trueFieldPose = r.w.getRobotPoseFieldSpace(r.w.getTargetTagID());
-            if (trueFieldPose != null) {
-                r.follower.setPose(trueFieldPose);
-                gamepad1.rumble(500);
-            }
+            if (trueFieldPose != null) startPose = trueFieldPose;
         }
+        r.follower.setPose(startPose);
 
-        setLightPosition(-0.95);
-        r.periodic();
+        // This starts teleop drive mode for follower.
         r.follower.startTeleopDrive();
-        r.setShootTarget();
+
+        setLightPower(0.0);
         gamepad1.rumbleBlips(1);
         gamepad2.rumbleBlips(1);
     }
 
     @Override
     public void loop() {
+        // This keeps subsystems + follower updated each loop.
         r.periodic();
+
+        // This runs the command scheduler so commands actually execute.
         CommandScheduler.getInstance().run();
+
         driverGamepad.readButtons();
         operatorGamepad.readButtons();
 
-        hood();
-        intake();
         drive();
-
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
-            isShooterActive = true;
-            shoot.resetTimer();
-            gamepad2.rumbleBlips(1);
-        }
-
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
-            r.s.stopMotor();
-            isShooterActive = false;
-            gamepad2.rumbleBlips(2);
-        }
+        intake();
+        shooterLogic();
 
         r.w.displayTagTelemetry(r.w.getTargetTag());
         r.s.getTelemetryData(telemetry);
-        r.i.getTelemetryData(telemetry);
-        telemetryM.debug("Position: ", r.follower.getPose());
         telemetry.addData("Distance Used", dist);
+
         telemetry.update();
         telemetryM.update();
     }
 
     public void drive() {
+        // This toggles slow mode so driver can be more precise.
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
             slowModeActive = true;
-            setLightPosition(-0.29);
+            setLightPower(0.25);
             gamepad1.rumbleBlips(1);
         }
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             slowModeActive = false;
-            setLightPosition(-0.83);
+            setLightPower(0.0);
             gamepad1.rumbleBlips(2);
         }
 
         double speedMult = slowModeActive ? adjustSpeed : 1.0;
+
+        // This sends joystick inputs into Pedro teleop drive.
         r.follower.setTeleOpDrive(
                 -gamepad1.left_stick_y * speedMult,
                 -gamepad1.left_stick_x * speedMult,
@@ -134,11 +144,14 @@ public class tele2 extends OpMode {
                 false
         );
 
-        if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) adjustSpeed = Math.min(1.0, adjustSpeed + 0.2);
-        if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) adjustSpeed = Math.max(0.0, adjustSpeed - 0.2);
+        if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT))
+            adjustSpeed = Math.min(1.0, adjustSpeed + 0.2);
+        if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT))
+            adjustSpeed = Math.max(0.0, adjustSpeed - 0.2);
     }
 
     public void intake() {
+        // This toggles intake in/out using commands without constantly rescheduling.
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
             isIntakeInward = !isIntakeInward;
             isIntakeOutward = false;
@@ -152,54 +165,59 @@ public class tele2 extends OpMode {
         }
     }
 
-    public void hood() {
-        if (r.w.isTagVisible(r.w.getTargetTagID())) {
-            dist = r.w.getRangeToTag();
-        } else {
-            dist = r.getShootTarget().distanceFrom(r.follower.getPose());
+    public void shooterLogic() {
+        // This gets distance either from AprilTag (if visible) or from geometry as a fallback.
+        if (r.w.isTagVisible(r.w.getTargetTagID())) dist = r.w.getRangeToTag();
+        else dist = r.getShootTarget().distanceFrom(r.follower.getPose());
+
+        // This starts shooting when A is pressed.
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
+            isShooterActive = true;
+            shoot.resetTimer();
+            gamepad2.rumbleBlips(1);
         }
 
-        if (isShooterActive) {
-            CommandScheduler.getInstance().schedule(r.i.idleCommand());
-            r.s.forDistance(dist);
+        // This stops shooter when X is pressed.
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
+            r.s.stopMotor();
+            r.s.kickDown();
+            isShooterActive = false;
+            gamepad2.rumbleBlips(2);
+        }
 
-            if (shoot.getElapsedTime() > 0.8) {
-                r.s.kickUp();
-                if (kick.getElapsedTime() > 0.5) {
-                    r.s.kickDown();
-                    r.i.spinIn();
-                }
-                shoot.resetTimer();
-                kick.resetTimer();
-            }
-            if (shoot.getElapsedTime() > 0.4) {
-                r.s.kickUp();
-                if (kick.getElapsedTime() > 0.5) {
-                    r.s.kickDown();
-                    r.i.spinIn();
-                }
-                shoot.resetTimer();
-                kick.resetTimer();
-            }
-            if (shoot.getElapsedTime() > 0.4) {
-                r.s.kickUp();
-                if (kick.getElapsedTime() > 0.5) {
-                    r.s.kickDown();
-                    r.i.spinIn();
-                }
-            }
+        if (!isShooterActive) return;
+
+        // This keeps shooter spinning to a distance-based target.
+        r.s.forDistance(dist);
+
+        // This is a simple, repeatable kick cycle so it doesn’t “timer reset spam.”
+        double t = shoot.getElapsedTime();
+
+        if (t < 0.25) {
+            r.s.kickUp();
+            r.i.spinIdle();
+        } else if (t < 0.45) {
+            r.s.kickDown();
+            r.i.spinIdle();
+        } else {
+            // Cycle complete: push next artifact a bit, then restart.
+            r.i.spinIn();
+            shoot.resetTimer();
         }
     }
 
-    private void setLightPosition(double pos) {
-        if (Math.abs(pos - currentLightPos) > 0.05) {
-            indicatorLight.setPosition(pos);
-            currentLightPos = pos;
+    private void setLightPower(double power) {
+        // This clamps light power so it stays within the valid PWM range.
+        double clipped = Math.max(-1.0, Math.min(1.0, power));
+        if (Math.abs(clipped - currentLightPower) > 0.05) {
+            indicatorLight.setPower(clipped);
+            currentLightPower = clipped;
         }
     }
 
     @Override
     public void stop() {
+        // This clears command scheduler so old commands don’t haunt the next opmode.
         CommandScheduler.getInstance().reset();
     }
 }
