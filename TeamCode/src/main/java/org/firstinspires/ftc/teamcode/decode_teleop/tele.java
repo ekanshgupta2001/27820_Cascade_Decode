@@ -185,9 +185,9 @@ public class tele extends OpMode{
         w.periodic();
 
         int currentID = w.getTargetTagID();
-        if (currentID >= 0){
-            distance = w.getDistancetoTagId();
-        }
+//        if (currentID >= 0){
+//            distance = w.getDistancetoTagId();
+//        }
         if (isShooterActive && distance > 0) {
             if (distance >= 200) {
                 CommandScheduler.getInstance().schedule(s.feedUpCommand());

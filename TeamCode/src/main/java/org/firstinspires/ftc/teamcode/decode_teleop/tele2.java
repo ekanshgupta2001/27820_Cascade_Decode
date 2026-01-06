@@ -82,8 +82,12 @@ public class tele2 extends OpMode {
 
     @Override
     public void start() {
-        // This sets a valid starting pose no matter what, so Pedro never crashes.
         Pose startPose = new Pose(12, 12, 0); // TODO: replace with your real start pose
+        // This sets a valid starting pose no matter what, so Pedro never crashes.
+        if(r.a == Alliance.RED){
+            startPose = startPose.mirror();
+        }
+
         if (r.w.isTagVisible(r.w.getTargetTagID())) {
             Pose trueFieldPose = r.w.getRobotPoseFieldSpace(r.w.getTargetTagID());
             if (trueFieldPose != null) startPose = trueFieldPose;

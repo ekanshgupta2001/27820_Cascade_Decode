@@ -8,15 +8,13 @@ import org.firstinspires.ftc.teamcode.subsystems.Intake;
 
 public class IntakeIn extends CommandBase {
     private final Intake i;
-    private final Follower follower;
 
     private int st = 0;
     private final Timer t = new Timer();
 
-    public IntakeIn(Intake i, Follower follower) {
+    public IntakeIn(Intake i) {
         // This command spins intake in for a short time, then ends when drive is done.
         this.i = i;
-        this.follower = follower;
         addRequirements(i);
     }
 
@@ -37,7 +35,7 @@ public class IntakeIn extends CommandBase {
 
             case 1:
                 // Pedro Timer is in seconds, so 1.5 means 1.5 seconds.
-                if (t.getElapsedTime() > 1.5 && !follower.isBusy()) {
+                if (t.getElapsedTime() > 1.5) {
                     setState(-1);
                 }
                 break;

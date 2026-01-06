@@ -205,9 +205,9 @@ public class tele2Drive extends OpMode {
     public void hood(){
         w.periodic();
         int currentID = w.getTargetTagID();
-        if (currentID >= 0){
-            distance = w.getDistancetoTagId();
-        }
+//        if (currentID >= 0){
+//            distance = w.getDistancetoTagId();
+//        }
         if (isShooterActive) {
             if (distance >= 200) {
 //                CommandScheduler.getInstance().schedule(s.feedUpCommand());
