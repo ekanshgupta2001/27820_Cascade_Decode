@@ -89,31 +89,31 @@ public class Robot {
         setShootTarget();
     }
 
-    public void park() {
-        // This picks the correct park pose based on alliance.
-        if (a == Alliance.BLUE) parkPose = BLUE_PARK_POSE;
-        else if (a == Alliance.RED) parkPose = BLUE_PARK_POSE.mirror();
-
-        // This builds a path starting from our CURRENT pose (so pose must not be null).
-        parkBot = () -> follower.pathBuilder()
-                .addPath(new Path(new BezierLine(follower::getPose, parkPose)))
-                .setHeadingInterpolation(
-                        HeadingInterpolator.linearFromPoint(
-                                follower::getHeading,
-                                Math.toRadians(90),
-                                0.8
-                        )
-                )
-                .build();
-    }
-
-    public void startParkingPath() {
-        // This is a safety check: if pose is null, Pedro will crash building the BezierLine.
-        if (follower.getPose() == null) return;
-
-        park();
-        follower.followPath(parkBot.get());
-    }
+//    public void park() {
+//        // This picks the correct park pose based on alliance.
+//        if (a == Alliance.BLUE) parkPose = BLUE_PARK_POSE;
+//        else if (a == Alliance.RED) parkPose = BLUE_PARK_POSE.mirror();
+//
+//        // This builds a path starting from our CURRENT pose (so pose must not be null).
+//        parkBot = () -> follower.pathBuilder()
+//                .addPath(new Path(new BezierLine(follower::getPose, parkPose)))
+//                .setHeadingInterpolation(
+//                        HeadingInterpolator.linearFromPoint(
+//                                follower::getHeading,
+//                                Math.toRadians(90),
+//                                0.8
+//                        )
+//                )
+//                .build();
+//    }
+//
+//    public void startParkingPath() {
+//        // This is a safety check: if pose is null, Pedro will crash building the BezierLine.
+//        if (follower.getPose() == null) return;
+//
+//        park();
+//        follower.followPath(parkBot.get());
+//    }
 
     public Pose getShootTarget() {
         // This returns whatever target pose is currently active.
