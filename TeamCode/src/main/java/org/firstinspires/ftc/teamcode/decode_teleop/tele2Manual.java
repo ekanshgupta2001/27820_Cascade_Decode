@@ -9,10 +9,12 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
+import com.sun.source.tree.IfTree;
 
 import org.firstinspires.ftc.teamcode.Alliance;
 import org.firstinspires.ftc.teamcode.NonVisionRobot;
@@ -43,7 +45,7 @@ public class tele2Manual extends OpMode {
     // Shooter modes
     // ----------------------------
     private enum ShooterMode { AUTO, MANUAL }
-    private ShooterMode shooterMode = ShooterMode.AUTO;
+    private ShooterMode shooterMode = ShooterMode.MANUAL;
 
     // AUTO firing state
     private boolean autoShooterActive = false;
@@ -55,9 +57,6 @@ public class tele2Manual extends OpMode {
     // Distance used for shooter calculations
     public double dist = 0.0;
 
-    // ----------------------------
-    // IMPORTANT: FILL THESE IN
-    // ----------------------------
     // Put your REAL Pedro field coordinates here for the "top triangle" landmark.
     // Heading should be in RADIANS, and should match how you want the robot oriented
     // right after calibration.
@@ -123,8 +122,8 @@ public class tele2Manual extends OpMode {
 
         // Put mechanisms in a safe known state
         r.s.stopMotor();
-        r.s.kickDown();
-        r.s.feedZero();
+//        r.s.kickDown();
+//        r.s.feedZero();
 
         setLightPos(0.0);
         gamepad1.rumbleBlips(1);
@@ -160,6 +159,7 @@ public class tele2Manual extends OpMode {
         telemetry.addData("Pose", (p == null) ? "null" :
                 String.format("(%.1f, %.1f, %.1f°)", p.getX(), p.getY(), Math.toDegrees(p.getHeading())));
         telemetry.addData("Distance Used", dist);
+
 
         r.s.getTelemetryData(telemetry);
 
@@ -198,7 +198,7 @@ public class tele2Manual extends OpMode {
             adjustSpeed = Math.max(0.0, adjustSpeed - 0.2);
 
         // Pose calibrate at top triangle: driver presses Y
-        if (driverGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
             Pose trianglePose = (r.a == Alliance.RED) ? BLUE_TOP_TRIANGLE_POSE.mirror() : BLUE_TOP_TRIANGLE_POSE;
             r.follower.setPose(trianglePose);
             calibrated = true;
@@ -208,9 +208,6 @@ public class tele2Manual extends OpMode {
         }
     }
 
-    // ----------------------------
-    // INTAKE (unchanged)
-    // ----------------------------
     public void intake() {
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.RIGHT_BUMPER)) {
             isIntakeInward = !isIntakeInward;
@@ -222,6 +219,13 @@ public class tele2Manual extends OpMode {
             isIntakeOutward = !isIntakeOutward;
             isIntakeInward = false;
             CommandScheduler.getInstance().schedule(isIntakeOutward ? r.i.outCommand() : r.i.idleCommand());
+        }
+        if (operatorGamepad.isDown(GamepadKeys.Button.RIGHT_BUMPER) &&
+                operatorGamepad.isDown(GamepadKeys.Button.LEFT_BUMPER)) {
+
+            isIntakeInward = false;
+            isIntakeOutward = false;
+            CommandScheduler.getInstance().schedule(r.i.idleCommand());
         }
     }
 
@@ -285,7 +289,7 @@ public class tele2Manual extends OpMode {
             gamepad2.rumbleBlips(2);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
-            r.s.intake(); // intakePower speed
+            r.s.intake();
             gamepad2.rumbleBlips(1);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {

@@ -26,7 +26,7 @@ public class ShooterWait extends SubsystemBase {
     public static double HDown = 0.15;
     public static double HZero = 0.0;
 
-    public static double kup = 0.167;
+    public static double kup = 0.280;
     public static double kdown = 0.0;
 
     // This is the shooter target velocity we’re aiming for.
@@ -45,6 +45,8 @@ public class ShooterWait extends SubsystemBase {
 
         // This is just how your servo was set up before; keep if it matches your robot.
         AH.setDirection(Servo.Direction.REVERSE);
+
+        KS.setDirection(Servo.Direction.FORWARD);
 
         this.intakeSubsystem = intakeSubsystem;
 

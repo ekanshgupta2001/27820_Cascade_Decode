@@ -17,7 +17,7 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.Alliance;
 import org.firstinspires.ftc.teamcode.NonVisionRobot;
 
-@TeleOp(name = "tele2NoVision")
+//@TeleOp(name = "tele2NoVision")
 @Config
 public class tele2NonVision extends OpMode {
 

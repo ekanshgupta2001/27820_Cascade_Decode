@@ -17,7 +17,7 @@ import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
 import org.firstinspires.ftc.teamcode.Alliance;
 import org.firstinspires.ftc.teamcode.Robot;
 
-@TeleOp
+//@TeleOp
 @Config
 public class tele2Vision extends OpMode {
     Robot r;
@@ -82,7 +82,7 @@ public class tele2Vision extends OpMode {
 
     @Override
     public void start() {
-        Pose startPose = new Pose(12, 12, 0); // TODO: replace with your real start pose
+        Pose startPose = new Pose(12, 12, 0);
         // This sets a valid starting pose no matter what, so Pedro never crashes.
         if(r.a == Alliance.RED){
             startPose = startPose.mirror();

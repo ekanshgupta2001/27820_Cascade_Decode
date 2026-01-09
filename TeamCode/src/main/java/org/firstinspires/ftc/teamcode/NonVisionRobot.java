@@ -13,13 +13,6 @@ import org.firstinspires.ftc.teamcode.subsystems.ShooterWait;
 
 import java.util.List;
 
-/**
- * NonVisionRobot:
- * - No webcam / vision dependencies.
- * - No automated parking logic.
- * - Keeps Pedro follower + encoder/odometry support via Constants.createFollower().
- * - Keeps intake + shooter subsystems.
- */
 public class NonVisionRobot {
     public final Intake i;
     public final ShooterWait s;
