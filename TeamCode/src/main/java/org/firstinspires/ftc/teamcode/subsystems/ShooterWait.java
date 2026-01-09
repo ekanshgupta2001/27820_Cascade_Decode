@@ -19,12 +19,15 @@ public class ShooterWait extends SubsystemBase {
 
     // These should be POSITIVE values; we flip motor direction once, not targets.
     public static double close = 350;
-    public static double far = 600;
+    public static double far = 500;
     public static double intakePower = 150;
 
     public static double HUp = 0.55;
     public static double HDown = 0.15;
     public static double HZero = 0.0;
+
+    //These are our PIDF controls
+    public static double kS = 0.00, kV = 0.000, kP = 0.000;
 
     public static double kup = 0.280;
     public static double kdown = 0.0;
@@ -128,12 +131,19 @@ public class ShooterWait extends SubsystemBase {
         // This is your distance-based velocity idea (still needs tuning), but now it’s safe.
         double vel = 0.001 * (Math.pow(distance, 2)) + distance;
         setTarget(vel);
+
+        if (distance >= 100){
+            feedUp();
+        }
+        if (distance < 100){
+            feedDown();
+        }
     }
 
     @Override
     public void periodic() {
         // This actually applies motor velocity control if activate is true.
-        if (activate) S.setVelocity(targetVel);
+        if (activate) S.setPower((kV * getTarget()) + (kP * (getTarget() - getVelocity())) + kS);
         else S.setPower(0);
     }
 

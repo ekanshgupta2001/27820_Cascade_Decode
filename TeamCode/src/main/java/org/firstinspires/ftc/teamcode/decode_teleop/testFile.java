@@ -17,7 +17,7 @@ import org.firstinspires.ftc.teamcode.Alliance;
 import org.firstinspires.ftc.teamcode.Robot;
 
 import com.pedropathing.util.Timer;
-@TeleOp
+//@TeleOp
 public class testFile extends OpMode {
     Robot r;
     GamepadEx operatorGamepad;

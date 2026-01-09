@@ -276,17 +276,17 @@ public class tele2Manual extends OpMode {
     // SHOOTER: MANUAL
     // ----------------------------
     private void shooterManualLogic() {
+
         // In manual, AUTO cycle must be off
         autoShooterActive = false;
+        Pose robotPose = r.follower.getPose();
+        if (robotPose == null) return;
+        dist = r.getShootTarget().distanceFrom(robotPose);
 
         // Flywheel presets (tap)
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
-            r.s.spinClose();
+            r.s.forDistance(dist);
             gamepad2.rumbleBlips(1);
-        }
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
-            r.s.spinFar();
-            gamepad2.rumbleBlips(2);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
             r.s.intake();
@@ -294,6 +294,7 @@ public class tele2Manual extends OpMode {
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
             r.s.stopMotor();
+            r.s.feedZero();
             gamepad2.rumbleBlips(2);
         }
 
@@ -302,16 +303,6 @@ public class tele2Manual extends OpMode {
             r.s.kickUp();
         } else if (operatorGamepad.isDown(GamepadKeys.Button.DPAD_DOWN)) {
             r.s.kickDown();
-        }
-
-        // Hood/feeder control (hold)
-        if (operatorGamepad.isDown(GamepadKeys.Button.DPAD_RIGHT)) {
-            r.s.feedUp();
-        } else if (operatorGamepad.isDown(GamepadKeys.Button.DPAD_LEFT)) {
-            r.s.feedDown();
-        } else {
-            // Neutral when neither pressed (prevents drift)
-            r.s.feedZero();
         }
     }
 
