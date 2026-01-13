@@ -30,7 +30,7 @@ public class NonVisionRobot {
     public static Pose endPose;
 
     // Base blue target pose. For red, we mirror it.
-    private static final Pose BLUE_SHOOT_TARGET = new Pose(6, 138, 0);
+    private static final Pose BLUE_SHOOT_TARGET = new Pose(10, 138, 0);
     public static Pose shootTarget = BLUE_SHOOT_TARGET;
 
     public NonVisionRobot(HardwareMap h, Telemetry telemetry, Alliance a) {

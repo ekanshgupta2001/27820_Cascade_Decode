@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.command.SubsystemBase;
 
@@ -20,14 +21,15 @@ public class ShooterWait extends SubsystemBase {
     // These should be POSITIVE values; we flip motor direction once, not targets.
     public static double close = 350;
     public static double far = 500;
+    public static double medium = 425;
     public static double intakePower = 150;
 
     public static double HUp = 0.55;
-    public static double HDown = 0.15;
+    public static double HDown = 0.20;
     public static double HZero = 0.0;
 
     //These are our PIDF controls
-    public static double kS = 0.00, kV = 0.000, kP = 0.000;
+    public static double kP = 0.00, kF = 11.7, kD = 0.000, kI = 0.000;
 
     public static double kup = 0.280;
     public static double kdown = 0.0;
@@ -36,7 +38,7 @@ public class ShooterWait extends SubsystemBase {
     private double targetVel = 0;
 
     // This decides if we’re actively trying to control shooter speed.
-    public static boolean activate = false;
+    public boolean activate = false;
 
     private final Intake intakeSubsystem;
 
@@ -56,17 +58,27 @@ public class ShooterWait extends SubsystemBase {
         // This sets motor behavior so velocity control is consistent.
         S.setDirection(DcMotorSimple.Direction.REVERSE);
         S.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        PIDFCoefficients coeffs = new PIDFCoefficients(kP, kI, kD, kF);
+        S.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
+
     }
 
     public void spinClose() {
         // This spins shooter to the close preset velocity.
         setTarget(close);
+        feedDown();
+    }
+
+    public void spinMedium() {
+        // This spins shooter to the far preset velocity.
+        setTarget(medium);
+        feedDown();
     }
 
     public void spinFar() {
         // This spins shooter to the far preset velocity.
         setTarget(far);
+        feedZero();
     }
 
     public void intake() {
@@ -127,25 +139,31 @@ public class ShooterWait extends SubsystemBase {
         return Math.abs(targetVelocity - getVelocity()) < 50;
     }
 
-    public void forDistance(double distance) {
-        // This is your distance-based velocity idea (still needs tuning), but now it’s safe.
-        double vel = 0.001 * (Math.pow(distance, 2)) + distance;
-        setTarget(vel);
-
-        if (distance >= 100){
-            feedUp();
+    public void forDistance(double distanceX, double distanceY) {
+        if (distanceX <= 28 && distanceY <= 31){
+            spinClose();
         }
-        if (distance < 100){
-            feedDown();
+        else if (distanceX > 28 && distanceX <= 78 && distanceY > 31 && distanceY <= 67){
+            spinMedium();
+        }
+        else if (distanceX > 78 && distanceY > 67){
+            spinFar();
+        }
+        else {
+            feedZero();
+            stopMotor();
         }
     }
 
     @Override
     public void periodic() {
-        // This actually applies motor velocity control if activate is true.
-        if (activate) S.setPower((kV * getTarget()) + (kP * (getTarget() - getVelocity())) + kS);
-        else S.setPower(0);
+        if (activate) {
+            S.setVelocity(targetVel);
+        } else {
+            S.setPower(0);
+        }
     }
+
 
     public void getTelemetryData(Telemetry telemetry) {
         // This prints shooter info to help debug in matches.

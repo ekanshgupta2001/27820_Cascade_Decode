@@ -4,10 +4,11 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.util.Timer;
 import com.seattlesolvers.solverslib.command.CommandBase;
 
+import org.firstinspires.ftc.teamcode.NonVisionRobot;
 import org.firstinspires.ftc.teamcode.Robot;
 
 public class Shoot extends CommandBase {
-    private final Robot r;
+    private final NonVisionRobot r;
     private final Follower follower;
 
     private int st = 0;
@@ -16,7 +17,7 @@ public class Shoot extends CommandBase {
     // This is the target speed this command shoots at (tune later).
     private static final double TARGET_VEL = 200;
 
-    public Shoot(Robot r) {
+    public Shoot(NonVisionRobot r) {
         // This command runs a full “spin up -> kick -> feed -> done” shooting cycle.
         this.r = r;
         this.follower = r.follower;

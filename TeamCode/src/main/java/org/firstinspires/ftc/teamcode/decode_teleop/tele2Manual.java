@@ -55,13 +55,15 @@ public class tele2Manual extends OpMode {
     private boolean calibrated = false;
 
     // Distance used for shooter calculations
-    public double dist = 0.0;
+    public double dist_x = 0.0;
+    public double dist_y = 0.0;
+    Pose targetPose;
 
     // Put your REAL Pedro field coordinates here for the "top triangle" landmark.
     // Heading should be in RADIANS, and should match how you want the robot oriented
     // right after calibration.
     private static final Pose BLUE_TOP_TRIANGLE_POSE = new Pose(
-            0, 0, 0 // TODO: replace with real x,y,heading(rad)
+            72, 72, 0 // TODO: replace with real x,y,heading(rad)
     );
 
     // A safe default starting pose (mirrors for red).
@@ -80,6 +82,7 @@ public class tele2Manual extends OpMode {
 
         driverGamepad = new GamepadEx(gamepad1);
         operatorGamepad = new GamepadEx(gamepad2);
+        targetPose = r.getShootTarget();
 
         setLightPos(0.0);
     }
@@ -128,6 +131,7 @@ public class tele2Manual extends OpMode {
         setLightPos(0.0);
         gamepad1.rumbleBlips(1);
         gamepad2.rumbleBlips(1);
+
     }
 
     @Override
@@ -137,6 +141,14 @@ public class tele2Manual extends OpMode {
 
         driverGamepad.readButtons();
         operatorGamepad.readButtons();
+
+        targetPose = r.getShootTarget();
+
+        Pose robotPose = r.follower.getPose();
+        if (robotPose != null && targetPose != null) {
+            dist_x = Math.abs(targetPose.getX() - robotPose.getX());
+            dist_y = Math.abs(targetPose.getY() - robotPose.getY());
+        }
 
         // Mode toggle any time
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.START)) {
@@ -158,7 +170,8 @@ public class tele2Manual extends OpMode {
         telemetry.addData("Calibrated?", calibrated);
         telemetry.addData("Pose", (p == null) ? "null" :
                 String.format("(%.1f, %.1f, %.1f°)", p.getX(), p.getY(), Math.toDegrees(p.getHeading())));
-        telemetry.addData("Distance Used", dist);
+        telemetry.addData("Distance Used X", dist_x);
+        telemetry.addData("Distance Used Y", dist_y);
 
 
         r.s.getTelemetryData(telemetry);
@@ -198,7 +211,7 @@ public class tele2Manual extends OpMode {
             adjustSpeed = Math.max(0.0, adjustSpeed - 0.2);
 
         // Pose calibrate at top triangle: driver presses Y
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
+        if (driverGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
             Pose trianglePose = (r.a == Alliance.RED) ? BLUE_TOP_TRIANGLE_POSE.mirror() : BLUE_TOP_TRIANGLE_POSE;
             r.follower.setPose(trianglePose);
             calibrated = true;
@@ -236,9 +249,6 @@ public class tele2Manual extends OpMode {
         Pose robotPose = r.follower.getPose();
         if (robotPose == null) return;
 
-        // Pure geometry distance (no webcam)
-        dist = r.getShootTarget().distanceFrom(robotPose);
-
         // Start AUTO cycle on A
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
             autoShooterActive = true;
@@ -255,7 +265,7 @@ public class tele2Manual extends OpMode {
         if (!autoShooterActive) return;
 
         // Spin flywheel based on distance
-        r.s.forDistance(dist);
+        r.s.forDistance(dist_x, dist_y);
 
         // Timed kick cycle (same style as you had)
         double t = shootTimer.getElapsedTime();
@@ -279,13 +289,11 @@ public class tele2Manual extends OpMode {
 
         // In manual, AUTO cycle must be off
         autoShooterActive = false;
-        Pose robotPose = r.follower.getPose();
-        if (robotPose == null) return;
-        dist = r.getShootTarget().distanceFrom(robotPose);
+
 
         // Flywheel presets (tap)
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
-            r.s.forDistance(dist);
+            r.s.forDistance(dist_x, dist_y);
             gamepad2.rumbleBlips(1);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {

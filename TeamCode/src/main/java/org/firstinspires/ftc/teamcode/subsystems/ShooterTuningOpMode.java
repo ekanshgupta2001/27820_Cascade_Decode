@@ -46,7 +46,7 @@ public class ShooterTuningOpMode extends LinearOpMode {
             telemetry.addData("01 - Target Velocity", shooter.getTarget());
             telemetry.addData("02 - Actual Velocity", shooter.getVelocity());
             telemetry.addData("03 - Error", shooter.getTarget() - shooter.getVelocity());
-            telemetry.addData("04 - Motor Power", (ShooterWait.kV * shooter.getTarget()) + (ShooterWait.kP * (shooter.getTarget() - shooter.getVelocity())) + ShooterWait.kS);
+            telemetry.addData("04 - Motor Power", (ShooterWait.kF * shooter.getTarget()) + (ShooterWait.kP * (shooter.getTarget() - shooter.getVelocity())) + ShooterWait.kD);
 
             telemetry.update();
         }
