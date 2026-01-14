@@ -69,7 +69,7 @@ public class blueClose extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances))
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Path to Intake & Score 2 ---
                         new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.next())),
@@ -78,7 +78,7 @@ public class blueClose extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances))
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Path to Intake & Score 3 ---
                         new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.next())),
@@ -87,7 +87,7 @@ public class blueClose extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances))
                                 ),
-                        new Shoot(r)
+                        new Shoot(r, dist_x, dist_y)
                 )
         );
     }

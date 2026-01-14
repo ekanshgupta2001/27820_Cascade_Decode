@@ -32,10 +32,10 @@ public class redClose extends CommandOpMode {
     @Override
     public void initialize() {
         // 1. Initialize Robot (Internal Follower and Subsystems created here)
-        r = new NonVisionRobot(hardwareMap, telemetry, Alliance.RED);
+        r = new NonVisionRobot(hardwareMap, telemetry, Alliance.BLUE);
 
         // 2. Initialize Paths
-        close = new closePath(r.follower, Alliance.RED);
+        close = new closePath(r.follower, Alliance.BLUE);
 
         // 3. Set Starting Pose (prioritize the path file's start position)
         Pose actualStart = (startingPose == null) ? close.start : startingPose;
@@ -69,7 +69,7 @@ public class redClose extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances))
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Path to Intake & Score 2 ---
                         new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.next())),
@@ -78,7 +78,7 @@ public class redClose extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances))
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Path to Intake & Score 3 ---
                         new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.next())),
@@ -87,7 +87,7 @@ public class redClose extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances))
                                 ),
-                        new Shoot(r)
+                        new Shoot(r, dist_x, dist_y)
                 )
         );
     }

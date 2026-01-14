@@ -54,10 +54,6 @@ dependencies {
     implementation "org.solverslib:core:0.3.3" // core
     implementation "org.solverslib:pedroPathing:0.3.3" // pedroPathing
 
-    // SolversLib: Latest Beta Version
-//    implementation "org.solverslib:core:SNAPSHOT-5a81a6b" // core
-//    implementation "org.solverslib:pedroPathing:SNAPSHOT-5a81a6b" // pedroPathing
-
     implementation "com.acmerobotics.dashboard:dashboard:0.4.17" // FTC Dashboard
 
     // Pedro Pathing

@@ -64,7 +64,7 @@ public class tele2Manual extends OpMode {
     // Heading should be in RADIANS, and should match how you want the robot oriented
     // right after calibration.
     private static final Pose BLUE_TOP_TRIANGLE_POSE = new Pose(
-            72, 72, 0 // TODO: replace with real x,y,heading(rad)
+            72, 72, 0
     );
 
     // A safe default starting pose (mirrors for red).
@@ -158,6 +158,7 @@ public class tele2Manual extends OpMode {
 
         drive();
         intake();
+        updateIndicator();
 
         // Shooter controls depend on mode
         if (shooterMode == ShooterMode.AUTO) shooterAutoLogic();
@@ -180,6 +181,27 @@ public class tele2Manual extends OpMode {
         telemetry.update();
         telemetryM.update();
     }
+
+    public void updateIndicator() {
+        // PRIORITY 1: Shooter Ready (Most important)
+        if (r.s.activate) {
+            if (r.s.isAtVelocity(r.s.getTarget())) {
+                setLightPos(0.500); // Green: Ready to fire
+            } else {
+                setLightPos(0.277); // Red/Orange: Speeding up
+            }
+        }
+        // PRIORITY 2: Slow Mode / Drive Status
+        else if (slowModeActive) {
+            setLightPos(0.250);
+        }
+        // PRIORITY 3: Default / Alliance
+        else {
+            if (r.a == Alliance.BLUE) setLightPos(0.600);
+            else setLightPos(0.277);
+        }
+    }
+
 
     // ----------------------------
     // DRIVE + CALIBRATION
@@ -298,9 +320,6 @@ public class tele2Manual extends OpMode {
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
             r.s.forDistance(dist_x, dist_y);
             gamepad2.rumbleBlips(1);
-            if (r.s.isAtVelocity(r.s.getTarget())){
-                indicatorLight.setPosition(0.500);
-            }
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
             r.i.intakeShooter();
@@ -313,9 +332,9 @@ public class tele2Manual extends OpMode {
         }
 
         // Kicker control (hold)
-        if (operatorGamepad.isDown(GamepadKeys.Button.DPAD_UP)) {
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
             r.s.kickUp();
-        } else if (operatorGamepad.isDown(GamepadKeys.Button.DPAD_DOWN)) {
+        } else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.s.kickDown();
         }
     }

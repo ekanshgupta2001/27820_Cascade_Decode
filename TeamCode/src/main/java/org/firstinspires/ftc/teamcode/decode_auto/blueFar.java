@@ -68,7 +68,7 @@ public class blueFar extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances)) // Added missing )
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Intake and Second Score ---
                         new IntakeIn(r.i),
@@ -79,7 +79,7 @@ public class blueFar extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances)) // Added missing )
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Intake and Third Score ---
                         new FollowPath(r.follower, far.next()),
@@ -89,7 +89,7 @@ public class blueFar extends CommandOpMode {
                                         new WaitUntilCommand(() -> r.follower.getCurrentTValue() >= 0.25)
                                                 .andThen(new InstantCommand(this::updateShooterDistances)) // Added missing )
                                 ),
-                        new Shoot(r),
+                        new Shoot(r, dist_x, dist_y),
 
                         // --- Cleanup ---
                         new FollowPath(r.follower, far.next()),

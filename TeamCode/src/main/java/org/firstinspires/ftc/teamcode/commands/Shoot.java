@@ -15,14 +15,18 @@ public class Shoot extends CommandBase {
     private final Timer t = new Timer();
 
     // This is the target speed this command shoots at (tune later).
-    private static final double TARGET_VEL = 200;
+    public double dist_x;
+    public double dist_y;
 
-    public Shoot(NonVisionRobot r) {
-        // This command runs a full “spin up -> kick -> feed -> done” shooting cycle.
+    // Inside Shoot.java
+    public Shoot(NonVisionRobot r, double dx, double dy) {
         this.r = r;
         this.follower = r.follower;
+        this.dist_x = dx;
+        this.dist_y = dy;
         addRequirements(r.s, r.i);
     }
+
 
     @Override
     public void initialize() {
@@ -36,27 +40,43 @@ public class Shoot extends CommandBase {
             case 0:
                 // This sets hood and starts spinning shooter.
                 r.s.feedUp();
-                r.s.setTarget(TARGET_VEL); // setTarget() now activates shooter in ShooterWait
+                r.s.forDistance(dist_x, dist_y); // setTarget() now activates shooter in ShooterWait
                 setState(1);
                 break;
 
             case 1:
                 // This waits until we’re basically at speed before feeding.
-                if (r.s.isAtVelocity(TARGET_VEL)) {
+                if (r.s.isAtVelocity(r.s.getTarget())) {
                     setState(2);
                 }
                 break;
 
             case 2:
-                // This is the timed kick/feed sequence (single cycle).
                 double e = t.getElapsedTime();
 
-                if (e > 0.00) r.s.kickUp();
-                if (e > 0.30) r.s.kickDown();
-                if (e > 0.60) r.i.shooterinCommand();
-                if (e > 0.90) r.i.spinIdle();
+                // Shot 1
+                if (e >= 0.00 && e < 0.30) r.s.kickUp();
+                else if (e >= 0.30 && e < 0.60) r.s.kickDown();
 
-                if (e > 1.10) setState(3);
+                // Intake/Transfer for Shot 2
+                if (e >= 0.60 && e < 0.90) r.i.shooterinCommand();
+
+                    // Shot 2
+                else if (e >= 0.90 && e < 1.20) r.s.kickUp();
+                else if (e >= 1.20 && e < 1.50) r.s.kickDown();
+
+                // Intake/Transfer for Shot 3
+                if (e >= 1.50 && e < 1.80) r.i.shooterinCommand();
+
+                    // Shot 3
+                else if (e >= 1.80 && e < 2.10) r.s.kickUp();
+                else if (e >= 2.10 && e < 2.40) r.s.kickDown();
+
+                // Cleanup and Exit
+                if (e > 2.50) {
+                    r.i.spinIdle();
+                    setState(3);
+                }
                 break;
 
             case 3:
