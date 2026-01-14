@@ -53,7 +53,7 @@ public class Shoot extends CommandBase {
 
                 if (e > 0.00) r.s.kickUp();
                 if (e > 0.30) r.s.kickDown();
-                if (e > 0.60) r.i.spinIn();
+                if (e > 0.60) r.i.shooterinCommand();
                 if (e > 0.90) r.i.spinIdle();
 
                 if (e > 1.10) setState(3);

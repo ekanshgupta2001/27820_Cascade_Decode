@@ -16,6 +16,7 @@ public class Intake extends SubsystemBase {
     private final DcMotorEx i;
     public static double idle = 0;
     public static double in = -0.9;
+    public static double shooterSpin = -0.1;
     public static double out = 0.9;
 
     public Intake(HardwareMap hardwareMap) {
@@ -32,6 +33,10 @@ public class Intake extends SubsystemBase {
 
     public void spinIn() {
         set(in);
+    }
+
+    public void intakeShooter() {
+        set(shooterSpin);
     }
 
     public void spinOut() {
@@ -51,6 +56,9 @@ public class Intake extends SubsystemBase {
         return new RunCommand(this::spinIn, this);
     }
 
+    public Command shooterinCommand() {
+        return new RunCommand(this::intakeShooter, this);
+    }
 
     public Command outCommand() {
         return new RunCommand(this::spinOut, this);

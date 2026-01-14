@@ -50,6 +50,7 @@ public class tele2Manual extends OpMode {
     // AUTO firing state
     private boolean autoShooterActive = false;
     private final Timer shootTimer = new Timer();
+    private final Timer indicatorTimer = new Timer();
 
     // Pose-calibration flag
     private boolean calibrated = false;
@@ -99,7 +100,7 @@ public class tele2Manual extends OpMode {
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.setAlliance(Alliance.RED);
-            setLightPos(0.6);
+            setLightPos(0.277);
         }
 
         // Shooter mode select pre-start (optional)
@@ -246,6 +247,7 @@ public class tele2Manual extends OpMode {
     // SHOOTER: AUTO
     // ----------------------------
     private void shooterAutoLogic() {
+        indicatorLight.setPosition(0.444);
         Pose robotPose = r.follower.getPose();
         if (robotPose == null) return;
 
@@ -277,7 +279,7 @@ public class tele2Manual extends OpMode {
             r.s.kickDown();
             r.i.spinIdle();
         } else {
-            r.i.spinIn();
+            r.i.shooterinCommand();
             shootTimer.resetTimer();
         }
     }
@@ -286,6 +288,7 @@ public class tele2Manual extends OpMode {
     // SHOOTER: MANUAL
     // ----------------------------
     private void shooterManualLogic() {
+        indicatorLight.setPosition(0.666);
 
         // In manual, AUTO cycle must be off
         autoShooterActive = false;
@@ -295,9 +298,12 @@ public class tele2Manual extends OpMode {
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
             r.s.forDistance(dist_x, dist_y);
             gamepad2.rumbleBlips(1);
+            if (r.s.isAtVelocity(r.s.getTarget())){
+                indicatorLight.setPosition(0.500);
+            }
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
-            r.s.intake();
+            r.i.intakeShooter();
             gamepad2.rumbleBlips(1);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
@@ -339,6 +345,9 @@ public class tele2Manual extends OpMode {
         if (Math.abs(clipped - currentLightPos) > 0.02) {
             indicatorLight.setPosition(clipped);
             currentLightPos = clipped;
+        }
+        if (indicatorTimer.getElapsedTime() >= 1.5){
+            indicatorLight.setPosition(0.0);
         }
     }
 

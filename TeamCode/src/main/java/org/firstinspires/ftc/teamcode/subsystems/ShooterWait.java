@@ -39,6 +39,7 @@ public class ShooterWait extends SubsystemBase {
 
     // This decides if we’re actively trying to control shooter speed.
     public boolean activate = false;
+    public boolean atVel = false;
 
     private final Intake intakeSubsystem;
 
