@@ -22,7 +22,7 @@ public class ShooterWait extends SubsystemBase {
     public static double close = 350;
     public static double far = 500;
     public static double medium = 425;
-    public static double intakePower = 150;
+    public static double intakePower = 0.2;
 
     public static double HUp = 0.55;
     public static double HDown = 0.20;
@@ -39,8 +39,6 @@ public class ShooterWait extends SubsystemBase {
 
     // This decides if we’re actively trying to control shooter speed.
     public boolean activate = false;
-    public boolean atVel = false;
-
     private final Intake intakeSubsystem;
 
     public ShooterWait(HardwareMap hardwareMap, Intake intakeSubsystem) {
@@ -79,12 +77,12 @@ public class ShooterWait extends SubsystemBase {
     public void spinFar() {
         // This spins shooter to the far preset velocity.
         setTarget(far);
-        feedZero();
+        feedUp();
     }
 
     public void intake() {
         // This spins shooter at a slower “intake/feed” speed.
-        setTarget(intakePower);
+        intakeSubsystem.set(intakePower);
     }
 
     public void setTarget(double velocity) {
