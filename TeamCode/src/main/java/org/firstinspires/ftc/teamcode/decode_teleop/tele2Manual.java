@@ -56,6 +56,7 @@ public class tele2Manual extends OpMode {
 
     // Distance used for shooter calculations
     public double dist = 0.0;
+    private boolean tripleShotRunning = false;
 
     Pose targetPose;
 
@@ -98,7 +99,7 @@ public class tele2Manual extends OpMode {
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.setAlliance(Alliance.RED);
-            setLightPos(0.6);
+            setLightPos(0.277);
         }
 
         telemetry.addData("Alliance", r.a);
@@ -199,7 +200,7 @@ public class tele2Manual extends OpMode {
             calibrated = true;
 
             gamepad1.rumbleBlips(2);
-            setLightPos(0.6);
+            setLightPos(0.388);
         }
     }
 
@@ -228,31 +229,45 @@ public class tele2Manual extends OpMode {
     // SHOOTER: MANUAL
     // ----------------------------
     private void shooterManualLogic() {
-        // Flywheel presets (tap)
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
+            setLightPos(0.500);
+            tripleShotRunning = true;
+            shootTimer.resetTimer();
             r.s.forDistance(0, dist);
-            gamepad2.rumbleBlips(1);
-            if (r.s.isAtVelocity(r.s.getTarget())){
+        }
+        if (tripleShotRunning) {
+            double time = shootTimer.getElapsedTime();
+
+            // Shot 1
+            if (time > 0.4 && time < 0.8) {
                 r.s.kickUp();
-                if (shootTimer.getElapsedTime() > 0.4 && shootTimer.getElapsedTime() < 0.8){
-                    r.s.kickDown();
-                    r.i.intakeShooter();
-                }
-                if (shootTimer.getElapsedTime() > 0.8 && shootTimer.getElapsedTime() < 1.2){
-                    r.s.kickUp();
-                }
-                if (shootTimer.getElapsedTime() > 1.2 && shootTimer.getElapsedTime() < 1.6){
-                    r.s.kickDown();
-                    r.i.intakeShooter();
-                }
-                if (shootTimer.getElapsedTime() > 1.6 && shootTimer.getElapsedTime() < 2.0){
-                    r.s.kickUp();
-                }
-                if (shootTimer.getElapsedTime() > 2.0){
-                    stopAllShooterActions();
-                }
+            }
+            // Reset for Shot 2
+            else if (time >= 0.8 && time < 1.2) {
+                r.s.kickDown();
+                r.i.intakeShooter(); // Feed the next ball
+            }
+            // Shot 2
+            else if (time >= 1.2 && time < 1.6) {
+                r.s.kickUp();
+            }
+            // Reset for Shot 3
+            else if (time >= 1.6 && time < 2.0) {
+                r.s.kickDown();
+                r.i.intakeShooter();
+            }
+            // Shot 3
+            else if (time >= 2.0 && time < 2.4) {
+                r.s.kickUp();
+            }
+            // Finish and Stop
+            else if (time >= 2.4) {
+                stopAllShooterActions();
+                tripleShotRunning = false;
+                setLightPos(0.0);
             }
         }
+
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
             r.s.intake();
             gamepad2.rumbleBlips(1);
