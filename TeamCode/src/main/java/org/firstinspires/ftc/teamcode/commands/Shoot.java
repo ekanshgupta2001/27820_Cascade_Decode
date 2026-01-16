@@ -59,7 +59,7 @@ public class Shoot extends CommandBase {
                 else if (e >= 0.30 && e < 0.60) r.s.kickDown();
 
                 // Intake/Transfer for Shot 2
-                if (e >= 0.60 && e < 0.90) r.i.shooterinCommand();
+                if (e >= 0.60 && e < 0.90) r.i.intakeShooter();
 
                     // Shot 2
                 else if (e >= 0.90 && e < 1.20) r.s.kickUp();

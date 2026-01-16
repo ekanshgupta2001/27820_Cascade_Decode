@@ -28,8 +28,6 @@ public class ShooterWait extends SubsystemBase {
     public static double HDown = 0.20;
     public static double HZero = 0.0;
 
-    //These are our PIDF controls
-    public static double kP = 0.00, kF = 11.7, kD = 0.000, kI = 0.000;
 
     public static double kup = 0.280;
     public static double kdown = 0.0;
@@ -50,17 +48,17 @@ public class ShooterWait extends SubsystemBase {
         // This is just how your servo was set up before; keep if it matches your robot.
         AH.setDirection(Servo.Direction.REVERSE);
 
-        KS.setDirection(Servo.Direction.FORWARD);
+        KS.setDirection(Servo.Direction.REVERSE);
 
         this.intakeSubsystem = intakeSubsystem;
 
         // This sets motor behavior so velocity control is consistent.
         S.setDirection(DcMotorSimple.Direction.REVERSE);
         S.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        PIDFCoefficients coeffs = new PIDFCoefficients(kP, kI, kD, kF);
-        S.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, coeffs);
+        S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
     }
+
 
     public void spinClose() {
         // This spins shooter to the close preset velocity.
@@ -138,19 +136,30 @@ public class ShooterWait extends SubsystemBase {
         return Math.abs(targetVelocity - getVelocity()) < 50;
     }
 
+    // FIXME: Delete distanceX param
     public void forDistance(double distanceX, double distanceY) {
-        if (distanceX <= 28 && distanceY <= 31){
+        if (distanceY <= 40){
             spinClose();
+            feedDown();
         }
-        else if (distanceX > 28 && distanceX <= 78 && distanceY > 31 && distanceY <= 67){
+        else if (distanceY > 40 && distanceY <= 80){
             spinMedium();
+            feedUp();
+            if (isAtVelocity(425)){
+                kickUp();
+            }
         }
-        else if (distanceX > 78 && distanceY > 67){
+        else if (distanceY > 67){
             spinFar();
+            feedUp();
+            if (isAtVelocity(500)){
+                kickUp();
+            }
         }
         else {
             feedZero();
             stopMotor();
+            kickDown();
         }
     }
 

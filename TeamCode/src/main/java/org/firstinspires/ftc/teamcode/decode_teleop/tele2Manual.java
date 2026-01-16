@@ -50,21 +50,20 @@ public class tele2Manual extends OpMode {
     // AUTO firing state
     private boolean autoShooterActive = false;
     private final Timer shootTimer = new Timer();
-    private final Timer indicatorTimer = new Timer();
 
     // Pose-calibration flag
     private boolean calibrated = false;
 
     // Distance used for shooter calculations
-    public double dist_x = 0.0;
-    public double dist_y = 0.0;
+    public double dist = 0.0;
+
     Pose targetPose;
 
     // Put your REAL Pedro field coordinates here for the "top triangle" landmark.
     // Heading should be in RADIANS, and should match how you want the robot oriented
     // right after calibration.
     private static final Pose BLUE_TOP_TRIANGLE_POSE = new Pose(
-            72, 72, 0
+            72, 72, 0 // TODO: replace with real x,y,heading(rad)
     );
 
     // A safe default starting pose (mirrors for red).
@@ -83,7 +82,6 @@ public class tele2Manual extends OpMode {
 
         driverGamepad = new GamepadEx(gamepad1);
         operatorGamepad = new GamepadEx(gamepad2);
-        targetPose = r.getShootTarget();
 
         setLightPos(0.0);
     }
@@ -100,12 +98,7 @@ public class tele2Manual extends OpMode {
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.setAlliance(Alliance.RED);
-            setLightPos(0.277);
-        }
-
-        // Shooter mode select pre-start (optional)
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.START)) {
-            toggleShooterMode();
+            setLightPos(0.6);
         }
 
         telemetry.addData("Alliance", r.a);
@@ -126,13 +119,13 @@ public class tele2Manual extends OpMode {
 
         // Put mechanisms in a safe known state
         r.s.stopMotor();
+        targetPose = r.getShootTarget();
 //        r.s.kickDown();
-//        r.s.feedZero();
+        r.s.feedZero();
 
         setLightPos(0.0);
         gamepad1.rumbleBlips(1);
         gamepad2.rumbleBlips(1);
-
     }
 
     @Override
@@ -143,26 +136,14 @@ public class tele2Manual extends OpMode {
         driverGamepad.readButtons();
         operatorGamepad.readButtons();
 
-        targetPose = r.getShootTarget();
+        drive();
+        intake();
+        shooterManualLogic();
 
         Pose robotPose = r.follower.getPose();
         if (robotPose != null && targetPose != null) {
-            dist_x = Math.abs(targetPose.getX() - robotPose.getX());
-            dist_y = Math.abs(targetPose.getY() - robotPose.getY());
+            dist = Math.abs(targetPose.getY() - robotPose.getY());
         }
-
-        // Mode toggle any time
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.START)) {
-            toggleShooterMode();
-        }
-
-        drive();
-        intake();
-        updateIndicator();
-
-        // Shooter controls depend on mode
-        if (shooterMode == ShooterMode.AUTO) shooterAutoLogic();
-        else shooterManualLogic();
 
         // Telemetry
         Pose p = r.follower.getPose();
@@ -172,8 +153,7 @@ public class tele2Manual extends OpMode {
         telemetry.addData("Calibrated?", calibrated);
         telemetry.addData("Pose", (p == null) ? "null" :
                 String.format("(%.1f, %.1f, %.1f°)", p.getX(), p.getY(), Math.toDegrees(p.getHeading())));
-        telemetry.addData("Distance Used X", dist_x);
-        telemetry.addData("Distance Used Y", dist_y);
+        telemetry.addData("Distance Used", dist);
 
 
         r.s.getTelemetryData(telemetry);
@@ -181,27 +161,6 @@ public class tele2Manual extends OpMode {
         telemetry.update();
         telemetryM.update();
     }
-
-    public void updateIndicator() {
-        // PRIORITY 1: Shooter Ready (Most important)
-        if (r.s.activate) {
-            if (r.s.isAtVelocity(r.s.getTarget())) {
-                setLightPos(0.500); // Green: Ready to fire
-            } else {
-                setLightPos(0.277); // Red/Orange: Speeding up
-            }
-        }
-        // PRIORITY 2: Slow Mode / Drive Status
-        else if (slowModeActive) {
-            setLightPos(0.250);
-        }
-        // PRIORITY 3: Default / Alliance
-        else {
-            if (r.a == Alliance.BLUE) setLightPos(0.600);
-            else setLightPos(0.277);
-        }
-    }
-
 
     // ----------------------------
     // DRIVE + CALIBRATION
@@ -225,7 +184,7 @@ public class tele2Manual extends OpMode {
                 -gamepad1.left_stick_y * speedMult,
                 -gamepad1.left_stick_x * speedMult,
                 -gamepad1.right_stick_x * speedMult,
-                false
+                true
         );
 
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT))
@@ -234,7 +193,7 @@ public class tele2Manual extends OpMode {
             adjustSpeed = Math.max(0.0, adjustSpeed - 0.2);
 
         // Pose calibrate at top triangle: driver presses Y
-        if (driverGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
             Pose trianglePose = (r.a == Alliance.RED) ? BLUE_TOP_TRIANGLE_POSE.mirror() : BLUE_TOP_TRIANGLE_POSE;
             r.follower.setPose(trianglePose);
             calibrated = true;
@@ -266,67 +225,41 @@ public class tele2Manual extends OpMode {
     }
 
     // ----------------------------
-    // SHOOTER: AUTO
-    // ----------------------------
-    private void shooterAutoLogic() {
-        indicatorLight.setPosition(0.444);
-        Pose robotPose = r.follower.getPose();
-        if (robotPose == null) return;
-
-        // Start AUTO cycle on A
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
-            autoShooterActive = true;
-            shootTimer.resetTimer();
-            gamepad2.rumbleBlips(1);
-        }
-
-        // Stop AUTO cycle on X
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
-            stopAllShooterActions();
-            gamepad2.rumbleBlips(2);
-        }
-
-        if (!autoShooterActive) return;
-
-        // Spin flywheel based on distance
-        r.s.forDistance(dist_x, dist_y);
-
-        // Timed kick cycle (same style as you had)
-        double t = shootTimer.getElapsedTime();
-
-        if (t < 0.25) {
-            r.s.kickUp();
-            r.i.spinIdle();
-        } else if (t < 0.45) {
-            r.s.kickDown();
-            r.i.spinIdle();
-        } else {
-            r.i.shooterinCommand();
-            shootTimer.resetTimer();
-        }
-    }
-
-    // ----------------------------
     // SHOOTER: MANUAL
     // ----------------------------
     private void shooterManualLogic() {
-        indicatorLight.setPosition(0.666);
-
-        // In manual, AUTO cycle must be off
-        autoShooterActive = false;
-
-
         // Flywheel presets (tap)
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
-            r.s.forDistance(dist_x, dist_y);
+            r.s.forDistance(0, dist);
             gamepad2.rumbleBlips(1);
+            if (r.s.isAtVelocity(r.s.getTarget())){
+                r.s.kickUp();
+                if (shootTimer.getElapsedTime() > 0.4 && shootTimer.getElapsedTime() < 0.8){
+                    r.s.kickDown();
+                    r.i.intakeShooter();
+                }
+                if (shootTimer.getElapsedTime() > 0.8 && shootTimer.getElapsedTime() < 1.2){
+                    r.s.kickUp();
+                }
+                if (shootTimer.getElapsedTime() > 1.2 && shootTimer.getElapsedTime() < 1.6){
+                    r.s.kickDown();
+                    r.i.intakeShooter();
+                }
+                if (shootTimer.getElapsedTime() > 1.6 && shootTimer.getElapsedTime() < 2.0){
+                    r.s.kickUp();
+                }
+                if (shootTimer.getElapsedTime() > 2.0){
+                    stopAllShooterActions();
+                }
+            }
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
-            r.i.intakeShooter();
+            r.s.intake();
             gamepad2.rumbleBlips(1);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
             r.s.stopMotor();
+            r.s.kickDown();
             r.s.feedZero();
             gamepad2.rumbleBlips(2);
         }
@@ -337,15 +270,12 @@ public class tele2Manual extends OpMode {
         } else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.s.kickDown();
         }
-    }
 
-    private void toggleShooterMode() {
-        shooterMode = (shooterMode == ShooterMode.AUTO) ? ShooterMode.MANUAL : ShooterMode.AUTO;
-
-        // Put mechanisms in a predictable state when switching
-        stopAllShooterActions();
-
-        gamepad2.rumbleBlips(3);
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) {
+            r.s.feedUp();
+        } else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
+            r.s.feedDown();
+        }
     }
 
     private void stopAllShooterActions() {
@@ -364,9 +294,6 @@ public class tele2Manual extends OpMode {
         if (Math.abs(clipped - currentLightPos) > 0.02) {
             indicatorLight.setPosition(clipped);
             currentLightPos = clipped;
-        }
-        if (indicatorTimer.getElapsedTime() >= 1.5){
-            indicatorLight.setPosition(0.0);
         }
     }
 

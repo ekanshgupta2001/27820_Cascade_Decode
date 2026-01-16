@@ -83,6 +83,8 @@ public class NonVisionRobot {
      */
     public void stop() {
         endPose = follower.getPose();
+        s.feedZero();
+        s.kickDown();
     }
 
     /**
