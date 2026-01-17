@@ -14,7 +14,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
 import com.seattlesolvers.solverslib.gamepad.GamepadKeys;
-import com.sun.source.tree.IfTree;
 
 import org.firstinspires.ftc.teamcode.Alliance;
 import org.firstinspires.ftc.teamcode.NonVisionRobot;
@@ -50,6 +49,7 @@ public class tele2Manual extends OpMode {
     // AUTO firing state
     private boolean autoShooterActive = false;
     private final Timer shootTimer = new Timer();
+    private final Timer indicator = new Timer();
 
     // Pose-calibration flag
     private boolean calibrated = false;
@@ -171,6 +171,10 @@ public class tele2Manual extends OpMode {
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
             slowModeActive = true;
             setLightPos(0.25);
+            if(indicator.getElapsedTime() > 1.0){
+                setLightPos(0.0);
+            }
+            indicator.resetTimer();
             gamepad1.rumbleBlips(1);
         }
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
@@ -229,69 +233,67 @@ public class tele2Manual extends OpMode {
     // SHOOTER: MANUAL
     // ----------------------------
     private void shooterManualLogic() {
+        // TRIGGER: Start the sequence
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
             setLightPos(0.500);
             tripleShotRunning = true;
             shootTimer.resetTimer();
-            r.s.forDistance(0, dist);
+            r.s.forDistance(0, dist); // Spin up flywheel
+            gamepad2.rumbleBlips(1);
         }
+
+        // SEQUENCE: Executes across multiple loops
         if (tripleShotRunning) {
             double time = shootTimer.getElapsedTime();
 
-            // Shot 1
-            if (time > 0.4 && time < 0.8) {
+            // Wait for flywheel spin-up, then SHOT 1
+            if (time > 1.2 && time < 1.5) {
                 r.s.kickUp();
             }
-            // Reset for Shot 2
-            else if (time >= 0.8 && time < 1.2) {
-                r.s.kickDown();
-                r.i.intakeShooter(); // Feed the next ball
-            }
-            // Shot 2
-            else if (time >= 1.2 && time < 1.6) {
-                r.s.kickUp();
-            }
-            // Reset for Shot 3
-            else if (time >= 1.6 && time < 2.0) {
+            // Reset kicker and feed SHOT 2
+            else if (time >= 1.5 && time < 1.9) {
                 r.s.kickDown();
                 r.i.intakeShooter();
             }
-            // Shot 3
-            else if (time >= 2.0 && time < 2.4) {
+            // SHOT 2
+            else if (time >= 1.9 && time < 2.2) {
                 r.s.kickUp();
             }
-            // Finish and Stop
-            else if (time >= 2.4) {
+            // Reset kicker and feed SHOT 3
+            else if (time >= 2.2 && time < 2.5) {
+                r.s.kickDown();
+                r.i.intakeShooter();
+            }
+            // SHOT 3
+            else if (time >= 2.5 && time < 2.9) {
+                r.s.kickUp();
+            }
+            // CLEANUP
+            else if (time >= 2.9) {
                 stopAllShooterActions();
                 tripleShotRunning = false;
                 setLightPos(0.0);
             }
         }
 
+        // Other Manual Controls
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
             r.s.intake();
             gamepad2.rumbleBlips(1);
         }
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
-            r.s.stopMotor();
-            r.s.kickDown();
-            r.s.feedZero();
-            gamepad2.rumbleBlips(2);
+            stopAllShooterActions();
+            tripleShotRunning = false;
         }
 
-        // Kicker control (hold)
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
-            r.s.kickUp();
-        } else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
-            r.s.kickDown();
-        }
+        // Manual Kicker/Feeder overrides
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) r.s.kickUp();
+        else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) r.s.kickDown();
 
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) {
-            r.s.feedUp();
-        } else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) {
-            r.s.feedDown();
-        }
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) r.s.feedUp();
+        else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) r.s.feedDown();
     }
+
 
     private void stopAllShooterActions() {
         autoShooterActive = false;
