@@ -9,7 +9,6 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.seattlesolvers.solverslib.command.CommandScheduler;
 import com.seattlesolvers.solverslib.gamepad.GamepadEx;
@@ -56,13 +55,30 @@ public class tele2Manual extends OpMode {
 
     // Distance used for shooter calculations
     public double dist = 0.0;
-    private boolean tripleShotRunning = false;
+
+    // ----------------------------
+    // TRIPLE SHOT STATE MACHINE
+    // ----------------------------
+    private boolean tripleShotEnabled = false;  // START toggles this (armed mode)
+    private boolean tripleShotRunning = false;  // true only while sequence is executing
+
+    private enum TripleState {
+        IDLE,
+        SPINUP,
+        SHOT1,
+        RESET1,
+        SHOT2,
+        RESET2,
+        SHOT3,
+        CLEANUP
+    }
+
+    private TripleState tripleState = TripleState.IDLE;
+    private final Timer tripleTimer = new Timer();
 
     Pose targetPose;
 
     // Put your REAL Pedro field coordinates here for the "top triangle" landmark.
-    // Heading should be in RADIANS, and should match how you want the robot oriented
-    // right after calibration.
     private static final Pose BLUE_TOP_TRIANGLE_POSE = new Pose(
             72, 72, 0 // TODO: replace with real x,y,heading(rad)
     );
@@ -118,11 +134,16 @@ public class tele2Manual extends OpMode {
         autoShooterActive = false;
         shootTimer.resetTimer();
 
+        // Reset triple-shot state
+        tripleShotRunning = false;
+        tripleState = TripleState.IDLE;
+        tripleTimer.resetTimer();
+
         // Put mechanisms in a safe known state
         r.s.stopMotor();
         targetPose = r.getShootTarget();
-//        r.s.kickDown();
         r.s.feedZero();
+        r.s.kickDown();
 
         setLightPos(0.0);
         gamepad1.rumbleBlips(1);
@@ -137,14 +158,15 @@ public class tele2Manual extends OpMode {
         driverGamepad.readButtons();
         operatorGamepad.readButtons();
 
-        drive();
-        intake();
-        shooterManualLogic();
-
+        // Compute dist BEFORE shooter logic so A-press uses fresh dist
         Pose robotPose = r.follower.getPose();
         if (robotPose != null && targetPose != null) {
             dist = Math.abs(targetPose.getY() - robotPose.getY());
         }
+
+        drive();
+        intake();
+        shooterManualLogic();
 
         // Telemetry
         Pose p = r.follower.getPose();
@@ -152,10 +174,12 @@ public class tele2Manual extends OpMode {
         telemetry.addData("Shooter Mode", shooterMode);
         telemetry.addData("AUTO Active?", autoShooterActive);
         telemetry.addData("Calibrated?", calibrated);
+        telemetry.addData("Triple Enabled", tripleShotEnabled);
+        telemetry.addData("Triple Running", tripleShotRunning);
+        telemetry.addData("Triple State", tripleState);
         telemetry.addData("Pose", (p == null) ? "null" :
                 String.format("(%.1f, %.1f, %.1f°)", p.getX(), p.getY(), Math.toDegrees(p.getHeading())));
         telemetry.addData("Distance Used", dist);
-
 
         r.s.getTelemetryData(telemetry);
 
@@ -171,7 +195,7 @@ public class tele2Manual extends OpMode {
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
             slowModeActive = true;
             setLightPos(0.25);
-            if(indicator.getElapsedTime() > 1.0){
+            if (indicator.getElapsedTime() > 1.0) {
                 setLightPos(0.0);
             }
             indicator.resetTimer();
@@ -230,49 +254,107 @@ public class tele2Manual extends OpMode {
     }
 
     // ----------------------------
-    // SHOOTER: MANUAL
+    // SHOOTER: MANUAL (with triple-shot option)
     // ----------------------------
     private void shooterManualLogic() {
-        // TRIGGER: Start the sequence
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
-            setLightPos(0.500);
-            tripleShotRunning = true;
-            shootTimer.resetTimer();
-            r.s.forDistance(0, dist); // Spin up flywheel
-            gamepad2.rumbleBlips(1);
-        }
 
-        // SEQUENCE: Executes across multiple loops
-        if (tripleShotRunning) {
-            double time = shootTimer.getElapsedTime();
+        // Toggle triple-shot enable/disable
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.START)) {
+            tripleShotEnabled = !tripleShotEnabled;
+            gamepad2.rumbleBlips(tripleShotEnabled ? 2 : 1);
 
-            // Wait for flywheel spin-up, then SHOT 1
-            if (time > 1.2 && time < 1.5) {
-                r.s.kickUp();
-            }
-            // Reset kicker and feed SHOT 2
-            else if (time >= 1.5 && time < 1.9) {
-                r.s.kickDown();
-                r.i.intakeShooter();
-            }
-            // SHOT 2
-            else if (time >= 1.9 && time < 2.2) {
-                r.s.kickUp();
-            }
-            // Reset kicker and feed SHOT 3
-            else if (time >= 2.2 && time < 2.5) {
-                r.s.kickDown();
-                r.i.intakeShooter();
-            }
-            // SHOT 3
-            else if (time >= 2.5 && time < 2.9) {
-                r.s.kickUp();
-            }
-            // CLEANUP
-            else if (time >= 2.9) {
+            // If they disable while running, cancel safely
+            if (!tripleShotEnabled && tripleShotRunning) {
                 stopAllShooterActions();
                 tripleShotRunning = false;
+                tripleState = TripleState.IDLE;
                 setLightPos(0.0);
+            }
+        }
+
+        // A: spin up (always). If triple enabled, start the triple sequence.
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
+            setLightPos(0.500);
+            shootTimer.resetTimer();
+
+            // Spin up flywheel + set hood based on distance
+            r.s.forDistance(0, dist);
+            gamepad2.rumbleBlips(1);
+
+            if (tripleShotEnabled) {
+                tripleShotRunning = true;
+                tripleState = TripleState.SPINUP;
+                tripleTimer.resetTimer();
+                r.s.kickDown(); // safe start position
+            }
+        }
+
+        // Run triple-shot state machine
+        if (tripleShotRunning) {
+            double t = tripleTimer.getElapsedTime();
+
+            switch (tripleState) {
+                case SPINUP:
+                    // Only proceed when BOTH: time passed and we are at target velocity
+                    if (t >= 1.2 && r.s.isAtVelocity(r.s.getTarget())) {
+                        r.s.kickUp(); // SHOT 1
+                        tripleState = TripleState.SHOT1;
+                        tripleTimer.resetTimer();
+                    }
+                    break;
+
+                case SHOT1:
+                    if (t >= 0.25) {
+                        r.s.kickDown();
+                        r.i.intakeShooter(); // feed next
+                        tripleState = TripleState.RESET1;
+                        tripleTimer.resetTimer();
+                    }
+                    break;
+
+                case RESET1:
+                    if (t >= 0.40) {
+                        r.s.kickUp(); // SHOT 2
+                        tripleState = TripleState.SHOT2;
+                        tripleTimer.resetTimer();
+                    }
+                    break;
+
+                case SHOT2:
+                    if (t >= 0.25) {
+                        r.s.kickDown();
+                        r.i.intakeShooter(); // feed next
+                        tripleState = TripleState.RESET2;
+                        tripleTimer.resetTimer();
+                    }
+                    break;
+
+                case RESET2:
+                    if (t >= 0.40) {
+                        r.s.kickUp(); // SHOT 3
+                        tripleState = TripleState.SHOT3;
+                        tripleTimer.resetTimer();
+                    }
+                    break;
+
+                case SHOT3:
+                    if (t >= 0.25) {
+                        tripleState = TripleState.CLEANUP;
+                        tripleTimer.resetTimer();
+                    }
+                    break;
+
+                case CLEANUP:
+                    stopAllShooterActions();
+                    tripleShotRunning = false;
+                    tripleState = TripleState.IDLE;
+                    setLightPos(0.0);
+                    break;
+
+                default:
+                    tripleShotRunning = false;
+                    tripleState = TripleState.IDLE;
+                    break;
             }
         }
 
@@ -281,9 +363,13 @@ public class tele2Manual extends OpMode {
             r.s.intake();
             gamepad2.rumbleBlips(1);
         }
+
+        // Cancel
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
             stopAllShooterActions();
             tripleShotRunning = false;
+            tripleState = TripleState.IDLE;
+            setLightPos(0.0);
         }
 
         // Manual Kicker/Feeder overrides
@@ -293,7 +379,6 @@ public class tele2Manual extends OpMode {
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) r.s.feedUp();
         else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) r.s.feedDown();
     }
-
 
     private void stopAllShooterActions() {
         autoShooterActive = false;
