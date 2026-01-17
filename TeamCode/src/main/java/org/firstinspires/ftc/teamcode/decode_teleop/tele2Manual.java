@@ -195,6 +195,7 @@ public class tele2Manual extends OpMode {
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) {
             slowModeActive = true;
             setLightPos(0.25);
+            indicator.resetTimer();
             if (indicator.getElapsedTime() > 1.0) {
                 setLightPos(0.0);
             }
