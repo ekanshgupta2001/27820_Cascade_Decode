@@ -140,24 +140,11 @@ public class ShooterWait extends SubsystemBase {
 
     // FIXME: Delete distanceX param
     public void forDistance(double distanceX, double distanceY) {
-        if (distanceY <= 40){
-            spinClose();
-            feedDown();
-        }
-        else if (distanceY <= 80){
-            spinMedium();
-            feedUp();
-        }
-        else if (distanceY > 80){
-            spinFar();
-            feedUp();
-        }
-        else {
-            feedZero();
-            stopMotor();
-            kickDown();
-        }
+        if (distanceY <= 40) spinClose();
+        else if (distanceY <= 80) spinMedium();
+        else spinFar();
     }
+
 
     @Override
     public void periodic() {
