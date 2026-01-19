@@ -383,7 +383,10 @@ public class tele2Manual extends OpMode {
         }
 
         // Manual Kicker/Feeder overrides (unchanged)
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) r.s.kickUp();
+        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)){
+            r.s.kickUp();
+            r.i.spinIdle();
+        }
         else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)){
             r.s.kickDown();
             r.i.intakeShooter();

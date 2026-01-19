@@ -15,9 +15,9 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 public class Intake extends SubsystemBase {
     private final DcMotorEx i;
     public static double idle = 0;
-    public static double in = -0.9;
+    public static double in = -0.8;
     public static double shooterSpin = -0.4;
-    public static double out = 0.9;
+    public static double out = 0.6;
 
     public Intake(HardwareMap hardwareMap) {
         i = hardwareMap.get(DcMotorEx.class, "IM");
