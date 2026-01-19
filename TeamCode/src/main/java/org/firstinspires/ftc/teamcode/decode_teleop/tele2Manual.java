@@ -380,6 +380,7 @@ public class tele2Manual extends OpMode {
         // Cancel (X) always cancels triple-shot + stops shooter
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.X)) {
             cancelTripleShot();
+            setLightPos(0.0);
         }
 
         // Manual Kicker/Feeder overrides (unchanged)
@@ -405,6 +406,7 @@ public class tele2Manual extends OpMode {
         r.s.stopMotor();
         r.s.kickDown();
         r.s.feedZero();
+        setLightPos(0.0);
         shootTimer.resetTimer();
     }
 
