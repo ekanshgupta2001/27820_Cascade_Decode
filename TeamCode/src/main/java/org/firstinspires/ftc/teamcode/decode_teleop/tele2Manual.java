@@ -80,6 +80,7 @@ public class tele2Manual extends OpMode {
     public static double MIN_SPINUP_TIME = 1.2;   // seconds
     public static double KICK_UP_TIME   = 0.25;  // seconds
     public static double FEED_TIME      = 0.40;  // seconds
+    public static double GREEN = 0.500;
 
     Pose targetPose;
 
@@ -230,7 +231,7 @@ public class tele2Manual extends OpMode {
             adjustSpeed = Math.max(0.0, adjustSpeed - 0.2);
 
         // Pose calibrate at top triangle: driver presses Y
-        if (operatorGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
+        if (driverGamepad.wasJustPressed(GamepadKeys.Button.Y)) {
             Pose trianglePose = (r.a == Alliance.RED) ? BLUE_TOP_TRIANGLE_POSE.mirror() : BLUE_TOP_TRIANGLE_POSE;
             r.follower.setPose(trianglePose);
             calibrated = true;
@@ -287,6 +288,7 @@ public class tele2Manual extends OpMode {
 
             // Spin up flywheel + set hood based on distance
             r.s.forDistance(0, dist);
+            if (r.s.isAtVelocity(r.s.getTarget())) setLightPos(GREEN);
             gamepad2.rumbleBlips(1);
 
             if (tripleShotEnabled && !tripleShotRunning) {
@@ -382,7 +384,10 @@ public class tele2Manual extends OpMode {
 
         // Manual Kicker/Feeder overrides (unchanged)
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_UP)) r.s.kickUp();
-        else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) r.s.kickDown();
+        else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)){
+            r.s.kickDown();
+            r.i.intakeShooter();
+        }
 
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_LEFT)) r.s.feedUp();
         else if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT)) r.s.feedDown();

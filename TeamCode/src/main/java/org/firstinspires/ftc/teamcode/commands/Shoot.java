@@ -1,110 +1,147 @@
 package org.firstinspires.ftc.teamcode.commands;
 
-import com.pedropathing.follower.Follower;
+import com.acmerobotics.dashboard.config.Config;
+import com.pedropathing.geometry.Pose;
 import com.pedropathing.util.Timer;
 import com.seattlesolvers.solverslib.command.CommandBase;
 
 import org.firstinspires.ftc.teamcode.NonVisionRobot;
-import org.firstinspires.ftc.teamcode.Robot;
 
+@Config
 public class Shoot extends CommandBase {
+
     private final NonVisionRobot r;
-    private final Follower follower;
+    private final Timer timer = new Timer();
 
-    private int st = 0;
-    private final Timer t = new Timer();
+    // Tune these in dashboard
+    public static double SPINUP_TIMEOUT = 3.5;    // seconds (you said ~3s)
+    public static double KICK_UP_TIME = 0.25;
+    public static double KICK_DOWN_TIME = 0.25;
+    public static double FEED_TIME = 0.40;
 
-    // This is the target speed this command shoots at (tune later).
-    public double dist_x;
-    public double dist_y;
+    private enum State {
+        WAIT_FOR_SPEED,
+        SHOT1_UP,
+        SHOT1_DOWN_FEED,
+        SHOT2_UP,
+        SHOT2_DOWN_FEED,
+        SHOT3_UP,
+        SHOT3_DOWN,
+        DONE
+    }
 
-    // Inside Shoot.java
-    public Shoot(NonVisionRobot r, double dx, double dy) {
+    private State st = State.WAIT_FOR_SPEED;
+
+    public Shoot(NonVisionRobot r) {
         this.r = r;
-        this.follower = r.follower;
-        this.dist_x = dx;
-        this.dist_y = dy;
         addRequirements(r.s, r.i);
     }
 
-
     @Override
     public void initialize() {
-        // This resets state/timer so each shot is consistent.
-        setState(0);
+        // Make sure shooter target matches current pose at the moment shooting starts
+        Pose robotPose = r.follower.getPose();
+        Pose targetPose = r.getShootTarget();
+
+        if (robotPose != null && targetPose != null) {
+            double dx = Math.abs(targetPose.getX() - robotPose.getX());
+            double dy = Math.abs(targetPose.getY() - robotPose.getY());
+            r.s.forDistance(dx, dy);
+        }
+
+        r.s.kickDown();
+        r.i.spinIdle();
+
+        st = State.WAIT_FOR_SPEED;
+        timer.resetTimer();
     }
 
     @Override
     public void execute() {
         switch (st) {
-            case 0:
-                // This sets hood and starts spinning shooter.
-                r.s.feedUp();
-                r.s.forDistance(dist_x, dist_y); // setTarget() now activates shooter in ShooterWait
-                setState(1);
-                break;
+            case WAIT_FOR_SPEED: {
+                // Keep holding the shooter target while waiting
+                Pose robotPose = r.follower.getPose();
+                Pose targetPose = r.getShootTarget();
+                if (robotPose != null && targetPose != null) {
+                    double dx = Math.abs(targetPose.getX() - robotPose.getX());
+                    double dy = Math.abs(targetPose.getY() - robotPose.getY());
+                    r.s.forDistance(dx, dy);
+                }
 
-            case 1:
-                // This waits until we’re basically at speed before feeding.
-                if (r.s.isAtVelocity(r.s.getTarget())) {
-                    setState(2);
+                boolean atSpeed = r.s.isAtVelocity(r.s.getTarget());
+                boolean timedOut = timer.getElapsedTime() >= SPINUP_TIMEOUT;
+
+                if (atSpeed || timedOut) {
+                    st = State.SHOT1_UP;
+                    timer.resetTimer();
+                }
+                break;
+            }
+
+            case SHOT1_UP:
+                r.s.kickUp();
+                if (timer.getElapsedTime() >= KICK_UP_TIME) {
+                    st = State.SHOT1_DOWN_FEED;
+                    timer.resetTimer();
                 }
                 break;
 
-            case 2:
-                double e = t.getElapsedTime();
-
-                // Shot 1
-                if (e >= 0.00 && e < 0.30) r.s.kickUp();
-                else if (e >= 0.30 && e < 0.60) r.s.kickDown();
-
-                // Intake/Transfer for Shot 2
-                if (e >= 0.60 && e < 0.90) r.i.intakeShooter();
-
-                    // Shot 2
-                else if (e >= 0.90 && e < 1.20) r.s.kickUp();
-                else if (e >= 1.20 && e < 1.50) r.s.kickDown();
-
-                // Intake/Transfer for Shot 3
-                if (e >= 1.50 && e < 1.80) r.i.shooterinCommand();
-
-                    // Shot 3
-                else if (e >= 1.80 && e < 2.10) r.s.kickUp();
-                else if (e >= 2.10 && e < 2.40) r.s.kickDown();
-
-                // Cleanup and Exit
-                if (e > 2.50) {
-                    r.i.spinIdle();
-                    setState(3);
+            case SHOT1_DOWN_FEED:
+                r.s.kickDown();
+                r.i.intakeShooter();
+                if (timer.getElapsedTime() >= (KICK_DOWN_TIME + FEED_TIME)) {
+                    st = State.SHOT2_UP;
+                    timer.resetTimer();
                 }
                 break;
 
-            case 3:
-                // This ends once we’re done and follower isn’t busy (optional).
-                if (!follower.isBusy()) {
-                    setState(-1);
+            case SHOT2_UP:
+                r.s.kickUp();
+                if (timer.getElapsedTime() >= KICK_UP_TIME) {
+                    st = State.SHOT2_DOWN_FEED;
+                    timer.resetTimer();
                 }
+                break;
+
+            case SHOT2_DOWN_FEED:
+                r.s.kickDown();
+                r.i.intakeShooter();
+                if (timer.getElapsedTime() >= (KICK_DOWN_TIME + FEED_TIME)) {
+                    st = State.SHOT3_UP;
+                    timer.resetTimer();
+                }
+                break;
+
+            case SHOT3_UP:
+                r.s.kickUp();
+                if (timer.getElapsedTime() >= KICK_UP_TIME) {
+                    st = State.SHOT3_DOWN;
+                    timer.resetTimer();
+                }
+                break;
+
+            case SHOT3_DOWN:
+                r.s.kickDown();
+                if (timer.getElapsedTime() >= KICK_DOWN_TIME) {
+                    st = State.DONE;
+                }
+                break;
+
+            case DONE:
                 break;
         }
     }
 
     @Override
     public boolean isFinished() {
-        // This ends when state machine says we’re done.
-        return st == -1;
+        return st == State.DONE;
     }
 
     @Override
     public void end(boolean interrupted) {
-        // This leaves the robot in a safe “not shooting” state.
         r.i.spinIdle();
         r.s.kickDown();
         r.s.stopMotor();
-    }
-
-    private void setState(int state) {
-        // This changes states cleanly and restarts the timer for that state.
-        st = state;
-        t.resetTimer();
     }
 }

@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
+import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.FLOAT;
 
 import com.acmerobotics.dashboard.config.Config;
 import com.pedropathing.util.Timer;
@@ -26,7 +27,7 @@ public class ShooterWait extends SubsystemBase {
     public static double medium = 425;
     public static double intakePower = 0.2;
 
-    public static double HUp = 0.55;
+    public static double HUp = 0.48;
     public static double HDown = 0.20;
     public static double HZero = 0.0;
 
@@ -56,7 +57,7 @@ public class ShooterWait extends SubsystemBase {
 
         // This sets motor behavior so velocity control is consistent.
         S.setDirection(DcMotorSimple.Direction.REVERSE);
-        S.setZeroPowerBehavior(BRAKE);
+        S.setZeroPowerBehavior(FLOAT);
         S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
     }

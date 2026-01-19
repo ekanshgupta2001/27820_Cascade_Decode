@@ -11,62 +11,67 @@ public class FollowPath extends CommandBase {
     private boolean holdEnd = true;
     private double maxPower = 1;
 
-    public FollowPath(Follower follower, PathChain pathChain) {
-        // This stores follower + path so we can start it cleanly in initialize().
-        this.follower = follower;
-        this.path = pathChain;
-    }
+    // Optional “trigger once at T”
+    private Runnable onTTrigger = null;
+    private double triggerT = 0.40;
+    private boolean fired = false;
 
-    public FollowPath(Follower follower, PathChain pathChain, double maxPower) {
-        // This lets us slow down path following for accuracy.
+    public FollowPath(Follower follower, PathChain pathChain) {
         this.follower = follower;
         this.path = pathChain;
-        this.maxPower = maxPower;
     }
 
     public FollowPath(Follower follower, PathChain pathChain, boolean holdEnd) {
-        // This decides if the robot “holds” its final pose once it’s done.
         this.follower = follower;
         this.path = pathChain;
         this.holdEnd = holdEnd;
     }
 
+    public FollowPath(Follower follower, PathChain pathChain, double maxPower) {
+        this.follower = follower;
+        this.path = pathChain;
+        this.maxPower = maxPower;
+    }
+
     public FollowPath(Follower follower, PathChain pathChain, boolean holdEnd, double maxPower) {
-        // This constructor gives full control over hold and speed.
         this.follower = follower;
         this.path = pathChain;
         this.holdEnd = holdEnd;
         this.maxPower = maxPower;
     }
 
-    public FollowPath setHoldEnd(boolean holdEnd) {
-        // This is a chainable setter for “hold at the end.”
-        this.holdEnd = holdEnd;
-        return this;
-    }
-
-    public FollowPath setMaxPower(double power) {
-        // This is a chainable setter for max follower power (0..1).
-        this.maxPower = power;
+    /** Call a function once when currentT >= t (default 0.40). */
+    public FollowPath withTTrigger(double t, Runnable callback) {
+        this.triggerT = t;
+        this.onTTrigger = callback;
         return this;
     }
 
     @Override
     public void initialize() {
-        // This starts path following at the requested speed.
+        fired = false;
         follower.setMaxPower(this.maxPower);
         follower.followPath(path, holdEnd);
     }
 
     @Override
+    public void execute() {
+        if (!fired && onTTrigger != null) {
+            double t = follower.getCurrentTValue();
+            if (t >= triggerT) {
+                fired = true;
+                onTTrigger.run();
+            }
+        }
+    }
+
+    @Override
     public boolean isFinished() {
-        // This ends when Pedro says we’re at the end of the path.
-        return follower.atParametricEnd();
+        return follower.atParametricEnd() && !follower.isBusy();
     }
 
     @Override
     public void end(boolean interrupted) {
-        // This restores max power so the next path/teleop isn’t accidentally capped.
         follower.setMaxPower(1);
     }
 }
