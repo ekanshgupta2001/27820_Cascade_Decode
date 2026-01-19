@@ -48,7 +48,7 @@ public class blueFar extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy);
+                                r.s.forDistance(dx, 90);
                             }
                         }),
                 new Shoot(r),
@@ -62,7 +62,7 @@ public class blueFar extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy);
+                                r.s.forDistance(dx, 90);
                             }
                         }),
                 new Shoot(r),
@@ -76,7 +76,7 @@ public class blueFar extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy);
+                                r.s.forDistance(dx, 90);
                             }
                         }),
                 new Shoot(r),

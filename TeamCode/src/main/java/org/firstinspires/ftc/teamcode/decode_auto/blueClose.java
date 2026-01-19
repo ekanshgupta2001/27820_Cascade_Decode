@@ -52,7 +52,7 @@ public class blueClose extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy); // starts spinup early
+                                r.s.forDistance(dx, 60); // starts spinup early
                             }
                         }),
                 new Shoot(r),
@@ -66,7 +66,7 @@ public class blueClose extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy); // starts spinup early
+                                r.s.forDistance(dx, 60); // starts spinup early
                             }
                         }),
                 new Shoot(r),
@@ -80,7 +80,7 @@ public class blueClose extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy); // starts spinup early
+                                r.s.forDistance(dx, 60); // starts spinup early
                             }
                         }),
                 new Shoot(r),
@@ -94,7 +94,7 @@ public class blueClose extends CommandOpMode {
                             if (p != null && target != null) {
                                 double dx = Math.abs(target.getX() - p.getX());
                                 double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, dy); // starts spinup early
+                                r.s.forDistance(dx, 60); // starts spinup early
                             }
                         }),
                 new Shoot(r),
