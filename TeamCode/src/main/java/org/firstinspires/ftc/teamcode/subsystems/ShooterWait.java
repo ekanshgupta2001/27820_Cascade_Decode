@@ -22,16 +22,19 @@ public class ShooterWait extends SubsystemBase {
     private final DcMotorEx S;  // Shooter motor
 
     // These should be POSITIVE values; we flip motor direction once, not targets.
-    public static double close = 350;
-    public static double far = 500;
-    public static double medium = 425;
+    public static double close = 300;
+    public static double far = 475;
+    public static double medium = 375;
     public static double intakePower = 0.2;
 
     public static double HUp = 0.48;
     public static double HDown = 0.20;
     public static double HZero = 0.0;
 
-
+    public static double kP = 0;
+    public static double kI = 0;
+    public static double kD = 0.0;
+    public static double kF = 10.5;
     public static double kup = 0.280;
     public static double kdown = 0.0;
 
@@ -41,6 +44,7 @@ public class ShooterWait extends SubsystemBase {
     // This decides if we’re actively trying to control shooter speed.
     public boolean activate = false;
     private final Intake intakeSubsystem;
+    private PIDFCoefficients lastCoeffs = new PIDFCoefficients(kP, kI, kD, kF);
 
     public ShooterWait(HardwareMap hardwareMap, Intake intakeSubsystem) {
         // This maps hardware names from RC config.
@@ -57,9 +61,16 @@ public class ShooterWait extends SubsystemBase {
 
         // This sets motor behavior so velocity control is consistent.
         S.setDirection(DcMotorSimple.Direction.REVERSE);
-        S.setZeroPowerBehavior(FLOAT);
+        S.setZeroPowerBehavior(BRAKE);
+        S.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
+        updatePIDF();
+    }
+
+    private void updatePIDF() {
+        lastCoeffs = new PIDFCoefficients(kP, kI, kD, kF);
+        S.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, lastCoeffs);
     }
 
 

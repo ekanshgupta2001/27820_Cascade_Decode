@@ -373,7 +373,7 @@ public class tele2Manual extends OpMode {
 
         // Other Manual Controls (unchanged)
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.B)) {
-            r.s.intake();
+            r.i.intakeShooter();
             gamepad2.rumbleBlips(1);
         }
 
