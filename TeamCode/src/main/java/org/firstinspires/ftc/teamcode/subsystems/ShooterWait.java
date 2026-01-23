@@ -31,10 +31,10 @@ public class ShooterWait extends SubsystemBase {
     public static double HDown = 0.20;
     public static double HZero = 0.0;
 
-    public static double kP = 0;
+    public static double kP = 60.0;
     public static double kI = 0;
-    public static double kD = 0.0;
-    public static double kF = 10.5;
+    public static double kD = 1.0;
+    public static double kF = 26.9;
     public static double kup = 0.280;
     public static double kdown = 0.0;
 
@@ -61,9 +61,9 @@ public class ShooterWait extends SubsystemBase {
 
         // This sets motor behavior so velocity control is consistent.
         S.setDirection(DcMotorSimple.Direction.REVERSE);
-        S.setZeroPowerBehavior(BRAKE);
+        S.setZeroPowerBehavior(FLOAT);
         S.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        S.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         updatePIDF();
     }
@@ -160,6 +160,12 @@ public class ShooterWait extends SubsystemBase {
 
     @Override
     public void periodic() {
+        // Update PIDF if tuning via dashboard
+        if (kP != lastCoeffs.p || kI != lastCoeffs.i ||
+                kD != lastCoeffs.d || kF != lastCoeffs.f) {
+            updatePIDF();
+        }
+
         if (activate) {
             S.setVelocity(targetVel);
         } else {
@@ -174,5 +180,6 @@ public class ShooterWait extends SubsystemBase {
         telemetry.addData("Shooter Target", targetVel);
         telemetry.addData("Target Close", close);
         telemetry.addData("Target Far", far);
+        telemetry.addData("Current PIDF", "P:%.1f I:%.1f D:%.1f F:%.1f", lastCoeffs.p, lastCoeffs.i, lastCoeffs.d, lastCoeffs.f); telemetry.addData("Error", targetVel - S.getVelocity());
     }
 }

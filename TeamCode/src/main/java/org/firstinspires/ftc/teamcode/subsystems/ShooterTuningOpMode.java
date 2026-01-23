@@ -10,7 +10,7 @@ import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterWait;
 
 @Config
-@TeleOp(name = "Shooter PIDF Tuner", group = "Tuning")
+@TeleOp(name = "PIDF Tuner", group = "Tuning")
 public class ShooterTuningOpMode extends LinearOpMode {
 
     // Controls for Dashboard
