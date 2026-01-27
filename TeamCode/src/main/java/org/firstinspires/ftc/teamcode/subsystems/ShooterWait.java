@@ -22,9 +22,9 @@ public class ShooterWait extends SubsystemBase {
     private final DcMotorEx S;  // Shooter motor
 
     // These should be POSITIVE values; we flip motor direction once, not targets.
-    public static double close = 300;
-    public static double far = 475;
-    public static double medium = 375;
+    public static double close = 275;
+    public static double far = 450;
+    public static double medium = 350;
     public static double intakePower = 0.2;
 
     public static double HUp = 0.48;
@@ -33,10 +33,10 @@ public class ShooterWait extends SubsystemBase {
 
     // PIDF VALUES - These will be tuned via FTC Dashboard
     // kF gets auto-calculated on first run, then you can manually adjust all values
-    public static double kP = 0.0;      // Proportional - how aggressively to correct error
-    public static double kI = 0.0;      // Integral - eliminates steady-state error
-    public static double kD = 0.0;      // Derivative - dampens oscillations
-    public static double kF = 0.0;      // Feedforward - calculated in constructor, but adjustable after
+    public static double kP = 24;      // Proportional - how aggressively to correct error   24
+    public static double kI = 0.05;      // Integral - eliminates steady-state error    0.05
+    public static double kD = 14;      // Derivative - dampens oscillations     12
+    public static double kF = 25.8;      // Feedforward - calculated in constructor, but adjustable after   25.8
 
     // Set this to true to skip auto-calculation and use manual kF value above
     public static boolean USE_MANUAL_KF = false;
@@ -90,9 +90,9 @@ public class ShooterWait extends SubsystemBase {
         }
 
         // Auto-calculate kF if not using manual value
-        if (!USE_MANUAL_KF) {
-            calculateFeedforward();
-        }
+//        if (!USE_MANUAL_KF) {
+//            calculateFeedforward();
+//        }
 
         // Apply our custom PIDF coefficients (overrides motor controller defaults)
         updatePIDF();
@@ -103,27 +103,27 @@ public class ShooterWait extends SubsystemBase {
      * This gets you 90% of the way there - the other PIDF terms fine-tune it.
      * After first run, you can see the calculated value in Dashboard and manually adjust if needed.
      */
-    private void calculateFeedforward() {
-        // Briefly run motor at full power to measure max velocity
-        S.setPower(1.0);
-        try {
-            Thread.sleep(150); // Let it spin up
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        double maxVelocity = S.getVelocity();
-        S.setPower(0.0);
-
-        // kF formula: 32767 / max_velocity
-        // 32767 is the internal max "power" value used by motor controller
-        if (maxVelocity > 10) {  // Safety check to avoid division by zero
-            kF = 32767.0 / maxVelocity;
-        } else {
-            // Fallback if measurement fails (motor didn't spin)
-            kF = 12.0;  // Conservative starting estimate
-        }
-    }
+//    private void calculateFeedforward() {
+//        // Briefly run motor at full power to measure max velocity
+//        S.setPower(1.0);
+//        try {
+//            Thread.sleep(150); // Let it spin up
+//        } catch (InterruptedException e) {
+//            Thread.currentThread().interrupt();
+//        }
+//
+//        double maxVelocity = S.getVelocity();
+//        S.setPower(0.0);
+//
+//        // kF formula: 32767 / max_velocity
+//        // 32767 is the internal max "power" value used by motor controller
+//        if (maxVelocity > 10) {  // Safety check to avoid division by zero
+//            kF = 32767.0 / maxVelocity;
+//        } else {
+//            // Fallback if measurement fails (motor didn't spin)
+//            kF = 12.0;  // Conservative starting estimate
+//        }
+//    }
 
     private void updatePIDF() {
         lastCoeffs = new PIDFCoefficients(kP, kI, kD, kF);

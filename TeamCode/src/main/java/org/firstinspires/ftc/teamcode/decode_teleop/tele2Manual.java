@@ -55,6 +55,7 @@ public class tele2Manual extends OpMode {
     }
     private AutoShootState autoState = AutoShootState.IDLE;
     private final Timer autoTimer = new Timer();
+    private final Timer intakeTimer = new Timer();
 
     private int shotsRemaining = 0;  // Track how many shots left in sequence
 
@@ -120,7 +121,7 @@ public class tele2Manual extends OpMode {
         autoState = AutoShootState.IDLE;
         autoTimer.resetTimer();
 
-        r.s.stopMotor();
+        r.s.setTarget(175);
         targetPose = r.getShootTarget();
         r.s.feedZero();
         r.s.kickDown();
@@ -291,6 +292,7 @@ public class tele2Manual extends OpMode {
                 if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
                     r.s.forDistance(dist);  // Set target based on distance
                     r.s.kickDown();            // Ensure kicker is down
+                    r.i.spinIdle();
                     shotsRemaining = MAX_SHOTS;
                     autoState = AutoShootState.SPINNING_UP;
                     autoTimer.resetTimer();
@@ -329,6 +331,11 @@ public class tele2Manual extends OpMode {
                 // You can add a delay here if you want drivers to have a moment
                 if (elapsed >= 0.3) {  // 0.3 second delay before auto-shooting
                     r.s.kickUp();
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                     autoState = AutoShootState.SHOOTING;
                     autoTimer.resetTimer();
                     setLightPos(LIGHT_SHOOTING_COLOR);
@@ -345,6 +352,11 @@ public class tele2Manual extends OpMode {
                 if (elapsed >= AUTO_KICK_UP_TIME) {
                     r.s.kickDown();
                     shotsRemaining--;
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
 
                     // Check if we're done or need to continue
                     if (shotsRemaining <= 0) {
@@ -429,6 +441,9 @@ public class tele2Manual extends OpMode {
         if (operatorGamepad.wasJustPressed(GamepadKeys.Button.DPAD_DOWN)) {
             r.s.kickDown();
             r.i.intakeShooter();
+            if (intakeTimer.getElapsedTimeSeconds() > 1.0){
+                r.i.spinIdle();
+            }
         }
 
         // D-pad LEFT/RIGHT: Adjust hood
@@ -444,9 +459,10 @@ public class tele2Manual extends OpMode {
     // HELPER FUNCTIONS
     // ═══════════════════════════════════════════════════════════
     private void stopAllShooterActions() {
-        r.s.stopMotor();
+        r.s.setTarget(100);
         r.s.kickDown();
         r.s.feedZero();
+        r.i.spinIdle();
         setLightPos(0.0);
         autoTimer.resetTimer();
     }
