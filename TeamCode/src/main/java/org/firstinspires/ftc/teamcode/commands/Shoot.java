@@ -14,7 +14,8 @@ public class Shoot extends CommandBase {
     private final Timer timer = new Timer();
 
     // Tune these in dashboard
-    public static double SPINUP_TIMEOUT = 3.5;    // seconds (you said ~3s)
+    public static double MIN_SPINUP_TIME = 0.5;     // Don't wait forever
+    public static double SPINUP_TIMEOUT = 4.0;      // Accept 4 second max
     public static double KICK_UP_TIME = 0.25;
     public static double KICK_DOWN_TIME = 0.25;
     public static double FEED_TIME = 0.40;
@@ -32,6 +33,9 @@ public class Shoot extends CommandBase {
 
     private State st = State.WAIT_FOR_SPEED;
 
+    // ADDED: Store the calculated distance once at the start
+    private double targetDistance = 0;
+
     public Shoot(NonVisionRobot r) {
         this.r = r;
         addRequirements(r.s, r.i);
@@ -39,14 +43,20 @@ public class Shoot extends CommandBase {
 
     @Override
     public void initialize() {
-        // Make sure shooter target matches current pose at the moment shooting starts
+        // CHANGED: Calculate target distance ONCE and store it
         Pose robotPose = r.follower.getPose();
         Pose targetPose = r.getShootTarget();
 
         if (robotPose != null && targetPose != null) {
-            double dx = Math.abs(targetPose.getX() - robotPose.getX());
-            double dy = Math.abs(targetPose.getY() - robotPose.getY());
-            r.s.forDistance(dx, dy);
+            // FIXED: Only use Y distance (vertical distance to basket)
+            targetDistance = Math.abs(targetPose.getY() - robotPose.getY());
+
+            // Set shooter velocity based on this fixed distance
+            r.s.forDistance(targetDistance);  // FIXED: First param unused, see FIXME
+        } else {
+            // Fallback if poses are null
+            targetDistance = 60;  // Default medium distance
+            r.s.forDistance(targetDistance);
         }
 
         r.s.kickDown();
@@ -60,19 +70,16 @@ public class Shoot extends CommandBase {
     public void execute() {
         switch (st) {
             case WAIT_FOR_SPEED: {
-                // Keep holding the shooter target while waiting
-                Pose robotPose = r.follower.getPose();
-                Pose targetPose = r.getShootTarget();
-                if (robotPose != null && targetPose != null) {
-                    double dx = Math.abs(targetPose.getX() - robotPose.getX());
-                    double dy = Math.abs(targetPose.getY() - robotPose.getY());
-                    r.s.forDistance(dx, dy);
-                }
+                // REMOVED: No longer recalculating distance here!
+                // The shooter target is already set in initialize()
 
+                double elapsed = timer.getElapsedTime();
                 boolean atSpeed = r.s.isAtVelocity(r.s.getTarget());
-                boolean timedOut = timer.getElapsedTime() >= SPINUP_TIMEOUT;
+                boolean minTimeReached = elapsed >= MIN_SPINUP_TIME;
+                boolean timedOut = elapsed >= SPINUP_TIMEOUT;
 
-                if (atSpeed || timedOut) {
+                // CHANGED: Must meet BOTH conditions OR timeout
+                if ((atSpeed && minTimeReached) || timedOut) {
                     st = State.SHOT1_UP;
                     timer.resetTimer();
                 }
@@ -142,6 +149,6 @@ public class Shoot extends CommandBase {
     public void end(boolean interrupted) {
         r.i.spinIdle();
         r.s.kickDown();
-        r.s.stopMotor();
+        r.s.setTarget(150);
     }
 }

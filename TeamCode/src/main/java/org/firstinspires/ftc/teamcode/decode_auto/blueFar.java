@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.decode_auto;
 
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.seattlesolvers.solverslib.command.CommandOpMode;
 import com.seattlesolvers.solverslib.command.InstantCommand;
 import com.seattlesolvers.solverslib.command.RunCommand;
@@ -14,6 +15,7 @@ import org.firstinspires.ftc.teamcode.commands.IntakeIn;
 import org.firstinspires.ftc.teamcode.commands.Shoot;
 import org.firstinspires.ftc.teamcode.paths.farPaths;
 
+@Autonomous(name = "Blue Far Auto", group = "Auto")
 public class blueFar extends CommandOpMode {
 
     private NonVisionRobot r;
@@ -27,64 +29,62 @@ public class blueFar extends CommandOpMode {
         r.follower.setStartingPose(far.start);
         r.follower.update();
 
-        // Forever periodic + telemetry (no requirements)
+        // Background task: update robot + telemetry (NO REQUIREMENTS)
         schedule(new RunCommand(() -> {
             r.periodic();
+
             Pose p = r.follower.getPose();
-            telemetry.addData("Pose", p);
-            telemetry.addData("Shooter Target", r.s.getTarget());
-            telemetry.addData("Shooter Vel", r.s.getVelocity());
-            telemetry.addData("At Target?", r.s.isAtVelocity(r.s.getTarget()));
+            if (p != null) {
+                telemetry.addData("Pose", String.format("(%.1f, %.1f, %.1f°)",
+                        p.getX(), p.getY(), Math.toDegrees(p.getHeading())));
+            }
+            telemetry.addData("Shooter Target", "%.1f", r.s.getTarget());
+            telemetry.addData("Shooter Vel", "%.1f", r.s.getVelocity());
+            telemetry.addData("At Target?", r.s.isAtVelocity(r.s.getTarget()) ? "YES" : "NO");
+            r.s.getTelemetryData(telemetry);
             telemetry.update();
         }));
 
-        // Main auto
+        // Main auto sequence
         schedule(new SequentialCommandGroup(
-                // Score 1
+                // ═══════════════════════════════════════════════
+                // SCORE 1 (Pre-loaded samples)
+                // ═══════════════════════════════════════════════
                 new FollowPath(r.follower, far.scoreP())
-                        .withTTrigger(0.40, () -> {
-                            Pose p = r.follower.getPose();
-                            Pose target = r.getShootTarget();
-                            if (p != null && target != null) {
-                                double dx = Math.abs(target.getX() - p.getX());
-                                double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, 90);
-                            }
+                        .withTTrigger(0.01, () -> {
+                            // Hardcoded FAR distance (>80 triggers spinFar())
+                            r.s.forDistance(90);
                         }),
                 new Shoot(r),
 
-// ... later ...
-
+                // ═══════════════════════════════════════════════
+                // PICK 1 + SCORE 2
+                // ═══════════════════════════════════════════════
+                new IntakeIn(r.i).alongWith(new FollowPath(r.follower, far.pickOne())),
                 new FollowPath(r.follower, far.scoreTwo())
-                        .withTTrigger(0.40, () -> {
-                            Pose p = r.follower.getPose();
-                            Pose target = r.getShootTarget();
-                            if (p != null && target != null) {
-                                double dx = Math.abs(target.getX() - p.getX());
-                                double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, 90);
-                            }
+                        .withTTrigger(0.05, () -> {
+                            r.s.forDistance(90);
                         }),
                 new Shoot(r),
 
-// ... later ...
-
+                // ═══════════════════════════════════════════════
+                // PICK 2 + SCORE 3
+                // ═══════════════════════════════════════════════
+                new IntakeIn(r.i).alongWith(new FollowPath(r.follower, far.pickTwo())),
                 new FollowPath(r.follower, far.scoreThird())
-                        .withTTrigger(0.40, () -> {
-                            Pose p = r.follower.getPose();
-                            Pose target = r.getShootTarget();
-                            if (p != null && target != null) {
-                                double dx = Math.abs(target.getX() - p.getX());
-                                double dy = Math.abs(target.getY() - p.getY());
-                                r.s.forDistance(dx, 90);
-                            }
+                        .withTTrigger(0.05, () -> {
+                            r.s.forDistance(90);
                         }),
                 new Shoot(r),
 
-                // Park
+                // ═══════════════════════════════════════════════
+                // PARK
+                // ═══════════════════════════════════════════════
                 new FollowPath(r.follower, far.parkPath()),
 
-                // End safe
+                // ═══════════════════════════════════════════════
+                // CLEAN SHUTDOWN
+                // ═══════════════════════════════════════════════
                 new InstantCommand(() -> {
                     r.i.spinIdle();
                     r.s.feedZero();
