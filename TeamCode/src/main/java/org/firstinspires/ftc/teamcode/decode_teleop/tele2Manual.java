@@ -364,6 +364,11 @@ public class tele2Manual extends OpMode {
                         autoTimer.resetTimer();
                     } else {
                         r.i.intakeShooter();  // Feed next sample
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
                         autoState = AutoShootState.RESETTING;
                         autoTimer.resetTimer();
                     }

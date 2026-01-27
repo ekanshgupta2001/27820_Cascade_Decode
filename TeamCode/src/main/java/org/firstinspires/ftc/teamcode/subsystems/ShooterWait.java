@@ -22,19 +22,19 @@ public class ShooterWait extends SubsystemBase {
     private final DcMotorEx S;  // Shooter motor
 
     // These should be POSITIVE values; we flip motor direction once, not targets.
-    public static double close = 275;
-    public static double far = 450;
-    public static double medium = 350;
+    public static double close = 345;
+    public static double far = 515;
+    public static double medium = 415;
     public static double intakePower = 0.2;
 
-    public static double HUp = 0.48;
+    public static double HUp = 0.55;
     public static double HDown = 0.20;
     public static double HZero = 0.0;
 
     // PIDF VALUES - These will be tuned via FTC Dashboard
     // kF gets auto-calculated on first run, then you can manually adjust all values
     public static double kP = 24;      // Proportional - how aggressively to correct error   24
-    public static double kI = 0.05;      // Integral - eliminates steady-state error    0.05
+    public static double kI = 0.08;      // Integral - eliminates steady-state error    0.08
     public static double kD = 14;      // Derivative - dampens oscillations     12
     public static double kF = 25.8;      // Feedforward - calculated in constructor, but adjustable after   25.8
 
@@ -42,7 +42,7 @@ public class ShooterWait extends SubsystemBase {
     public static boolean USE_MANUAL_KF = false;
 
     // Velocity tolerance for "at speed" check (ticks/sec)
-    public static double velocityTolerance = 25;
+    public static double velocityTolerance = 30;
 
     public static double kup = 0.280;
     public static double kdown = 0.0;
