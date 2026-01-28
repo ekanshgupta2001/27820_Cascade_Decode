@@ -62,7 +62,7 @@ public class blueFar extends CommandOpMode {
                 // ═══════════════════════════════════════════════
                 new IntakeIn(r.i).alongWith(new FollowPath(r.follower, far.pickOne())),
                 new FollowPath(r.follower, far.scoreTwo())
-                        .withTTrigger(0.05, () -> {
+                        .withTTrigger(0.01, () -> {
                             r.s.forDistance(90);
                         }),
                 new Shoot(r),
@@ -72,7 +72,7 @@ public class blueFar extends CommandOpMode {
                 // ═══════════════════════════════════════════════
                 new IntakeIn(r.i).alongWith(new FollowPath(r.follower, far.pickTwo())),
                 new FollowPath(r.follower, far.scoreThird())
-                        .withTTrigger(0.05, () -> {
+                        .withTTrigger(0.01, () -> {
                             r.s.forDistance(90);
                         }),
                 new Shoot(r),

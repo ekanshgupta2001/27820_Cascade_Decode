@@ -48,7 +48,7 @@ public class redClose extends CommandOpMode {
                 // SCORE 1 (Pre-loaded samples)
                 // ═══════════════════════════════════════════════
                 new FollowPath(r.follower, close.scoreP())
-                        .withTTrigger(0.1, () -> {
+                        .withTTrigger(0.01, () -> {
                             // Hardcoded expected distance for early spinup
                             r.s.forDistance(60); // Medium distance expected
                         }),
@@ -59,7 +59,7 @@ public class redClose extends CommandOpMode {
                 // ═══════════════════════════════════════════════
                 new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.pickOne())),
                 new FollowPath(r.follower, close.scoreTwo())
-                        .withTTrigger(0.1, () -> {
+                        .withTTrigger(0.01, () -> {
                             r.s.forDistance(60); // Medium distance expected
                         }),
                 new Shoot(r),
@@ -69,7 +69,7 @@ public class redClose extends CommandOpMode {
                 // ═══════════════════════════════════════════════
                 new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.pickTwo())),
                 new FollowPath(r.follower, close.scoreThird())
-                        .withTTrigger(0.1, () -> {
+                        .withTTrigger(0.01, () -> {
                             r.s.forDistance(60); // Medium distance expected
                         }),
                 new Shoot(r),
@@ -79,7 +79,7 @@ public class redClose extends CommandOpMode {
                 // ═══════════════════════════════════════════════
                 new IntakeIn(r.i).alongWith(new FollowPath(r.follower, close.pickThree())),
                 new FollowPath(r.follower, close.scoreFourth())
-                        .withTTrigger(0.1, () -> {
+                        .withTTrigger(0.01, () -> {
                             r.s.forDistance(60); // Medium distance expected
                         }),
                 new Shoot(r),
