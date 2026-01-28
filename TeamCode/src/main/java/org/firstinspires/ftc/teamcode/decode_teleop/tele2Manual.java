@@ -72,6 +72,7 @@ public class tele2Manual extends OpMode {
     public static double LIGHT_READY_COLOR = 0.500;   // Green when ready
     public static double LIGHT_SHOOTING_COLOR = 0.388; // Different color while shooting
     public static int MAX_SHOTS = 3;                   // Total samples to shoot
+    private boolean fieldCentricMode = true;
 
     Pose targetPose;
 
@@ -195,22 +196,19 @@ public class tele2Manual extends OpMode {
             setLightPos(0.0);
         }
 
+
         double speedMult = slowModeActive ? adjustSpeed : 1.0;
 
         r.follower.setTeleOpDrive(
                 -gamepad1.left_stick_y * speedMult,
                 -gamepad1.left_stick_x * speedMult,
                 -gamepad1.right_stick_x * speedMult,
-                false
+                fieldCentricMode
         );
 
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.START)){
-            r.follower.setTeleOpDrive(
-                    -gamepad1.left_stick_y * speedMult,
-                    -gamepad1.left_stick_x * speedMult,
-                    -gamepad1.right_stick_x * speedMult,
-                    true
-            );
+            fieldCentricMode = !fieldCentricMode;
+            gamepad1.rumbleBlips(3);
         }
 
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT))
@@ -397,6 +395,11 @@ public class tele2Manual extends OpMode {
                     gamepad2.rumbleBlips(3);  // 3 rumbles = sequence complete
                 }
                 break;
+        }
+
+
+        if (operatorGamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5){
+            r.i.shooterinCommand();
         }
     }
 
