@@ -33,6 +33,8 @@ public class ShooterWait extends SubsystemBase {
 
     // PIDF VALUES - These will be tuned via FTC Dashboard
     // kF gets auto-calculated on first run, then you can manually adjust all values
+
+    // FIXME: Retune kP to like 50, claude approved because of heavy flywheel
     public static double kP = 24;      // Proportional - how aggressively to correct error   24
     public static double kI = 0.08;      // Integral - eliminates steady-state error    0.08
     public static double kD = 14;      // Derivative - dampens oscillations     12

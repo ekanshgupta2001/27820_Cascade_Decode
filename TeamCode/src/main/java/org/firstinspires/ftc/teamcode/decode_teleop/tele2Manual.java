@@ -121,7 +121,7 @@ public class tele2Manual extends OpMode {
         autoState = AutoShootState.IDLE;
         autoTimer.resetTimer();
 
-        r.s.setTarget(250);
+        r.s.setTarget(290);
         targetPose = r.getShootTarget();
         r.s.feedZero();
         r.s.kickDown();
@@ -365,7 +365,7 @@ public class tele2Manual extends OpMode {
                     } else {
                         r.i.intakeShooter();  // Feed next sample
                         try {
-                            Thread.sleep(500);
+                            Thread.sleep(700);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -464,7 +464,7 @@ public class tele2Manual extends OpMode {
     // HELPER FUNCTIONS
     // ═══════════════════════════════════════════════════════════
     private void stopAllShooterActions() {
-        r.s.setTarget(250);
+        r.s.setTarget(290);
         r.s.kickDown();
         r.s.feedZero();
         r.i.spinIdle();
