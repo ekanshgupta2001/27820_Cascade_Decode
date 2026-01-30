@@ -49,7 +49,6 @@ public class blueClose extends CommandOpMode {
                 // ═══════════════════════════════════════════════
                 new FollowPath(r.follower, close.scoreP())
                         .withTTrigger(0.01, () -> {
-                            // Hardcoded expected distance for early spinup
                             r.s.forDistance(60); // Medium distance expected
                         }),
                 new Shoot(r),  // Will recalculate actual distance when it starts

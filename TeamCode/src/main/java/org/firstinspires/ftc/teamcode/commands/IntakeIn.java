@@ -11,7 +11,7 @@ public class IntakeIn extends CommandBase {
     private final Intake i;
     private final Timer t = new Timer();
 
-    public static double INTAKE_TIME = 1.5; // seconds
+    public static double INTAKE_TIME = 4.0; // seconds
 
     public IntakeIn(Intake i) {
         this.i = i;

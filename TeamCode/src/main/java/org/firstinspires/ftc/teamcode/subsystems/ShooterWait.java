@@ -20,31 +20,28 @@ public class ShooterWait extends SubsystemBase {
     private final Servo AH;     // Adjust hood / feeder servo
     private final Servo KS;     // Kick servo
     private final DcMotorEx S;  // Shooter motor
-
-    // These should be POSITIVE values; we flip motor direction once, not targets.
-    public static double close = 345;
-    public static double far = 515;
-    public static double medium = 415;
+    public static double close = 385;
+    public static double far = 600;
+    public static double medium = 480;
     public static double intakePower = 0.2;
 
-    public static double HUp = 0.55;
-    public static double HDown = 0.20;
+    public static double HUp = 0.5;
+    public static double HDown = 0.15;
+    public static double HClose = 0.05;
     public static double HZero = 0.0;
 
     // PIDF VALUES - These will be tuned via FTC Dashboard
     // kF gets auto-calculated on first run, then you can manually adjust all values
-
-    // FIXME: Retune kP to like 50, claude approved because of heavy flywheel
     public static double kP = 24;      // Proportional - how aggressively to correct error   24
     public static double kI = 0.08;      // Integral - eliminates steady-state error    0.08
-    public static double kD = 14;      // Derivative - dampens oscillations     12
+    public static double kD = 14;      // Derivative - dampens oscillations     kD
     public static double kF = 25.8;      // Feedforward - calculated in constructor, but adjustable after   25.8
 
     // Set this to true to skip auto-calculation and use manual kF value above
     public static boolean USE_MANUAL_KF = false;
 
     // Velocity tolerance for "at speed" check (ticks/sec)
-    public static double velocityTolerance = 30;
+    public static double velocityTolerance = 40;
 
     public static double kup = 0.280;
     public static double kdown = 0.0;
@@ -100,33 +97,6 @@ public class ShooterWait extends SubsystemBase {
         updatePIDF();
     }
 
-    /**
-     * Auto-calculates feedforward coefficient by measuring motor's max velocity.
-     * This gets you 90% of the way there - the other PIDF terms fine-tune it.
-     * After first run, you can see the calculated value in Dashboard and manually adjust if needed.
-     */
-//    private void calculateFeedforward() {
-//        // Briefly run motor at full power to measure max velocity
-//        S.setPower(1.0);
-//        try {
-//            Thread.sleep(150); // Let it spin up
-//        } catch (InterruptedException e) {
-//            Thread.currentThread().interrupt();
-//        }
-//
-//        double maxVelocity = S.getVelocity();
-//        S.setPower(0.0);
-//
-//        // kF formula: 32767 / max_velocity
-//        // 32767 is the internal max "power" value used by motor controller
-//        if (maxVelocity > 10) {  // Safety check to avoid division by zero
-//            kF = 32767.0 / maxVelocity;
-//        } else {
-//            // Fallback if measurement fails (motor didn't spin)
-//            kF = 12.0;  // Conservative starting estimate
-//        }
-//    }
-
     private void updatePIDF() {
         lastCoeffs = new PIDFCoefficients(kP, kI, kD, kF);
         // This OVERRIDES the motor controller's default PIDF with our custom values
@@ -135,7 +105,7 @@ public class ShooterWait extends SubsystemBase {
 
     public void spinClose() {
         setTarget(close);
-        feedDown();
+        feedClose();
     }
 
     public void spinMedium() {
@@ -186,6 +156,9 @@ public class ShooterWait extends SubsystemBase {
     public void feedDown() {
         AH.setPosition(HDown);
     }
+    public void feedClose() {
+        AH.setPosition(HClose);
+    }
 
     public void feedZero() {
         AH.setPosition(HZero);
@@ -206,12 +179,6 @@ public class ShooterWait extends SubsystemBase {
         if (distanceY <= 40) spinClose();
         else if (distanceY <= 80) spinMedium();
         else spinFar();
-    }
-
-    // DEPRECATED: Keep old signature for compatibility, but redirect
-    @Deprecated
-    public void forDistance(double distanceX, double distanceY) {
-        forDistance(distanceY);  // Just use Y distance
     }
 
     @Override
