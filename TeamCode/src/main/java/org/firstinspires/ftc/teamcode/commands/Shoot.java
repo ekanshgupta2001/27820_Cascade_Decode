@@ -18,7 +18,7 @@ public class Shoot extends CommandBase {
     public static double SPINUP_TIMEOUT = 4.0;      // Accept 4 second max
     public static double KICK_UP_TIME = 0.25;
     public static double KICK_DOWN_TIME = 0.25;
-    public static double FEED_TIME = 0.40;
+    public static double FEED_TIME = 0.5;
 
     private enum State {
         WAIT_FOR_SPEED,
