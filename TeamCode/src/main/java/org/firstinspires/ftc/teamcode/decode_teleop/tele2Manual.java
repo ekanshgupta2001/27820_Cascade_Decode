@@ -203,13 +203,9 @@ public class tele2Manual extends OpMode {
                 -gamepad1.left_stick_y * speedMult,
                 -gamepad1.left_stick_x * speedMult,
                 -gamepad1.right_stick_x * speedMult,
-                fieldCentricMode
+                true
         );
 
-        if (driverGamepad.wasJustPressed(GamepadKeys.Button.START)){
-            fieldCentricMode = !fieldCentricMode;
-            gamepad1.rumbleBlips(3);
-        }
 
         if (driverGamepad.wasJustPressed(GamepadKeys.Button.DPAD_RIGHT))
             adjustSpeed = Math.min(1.0, adjustSpeed + 0.2);
