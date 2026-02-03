@@ -359,7 +359,7 @@ public class tele2Manual extends OpMode {
                     } else {
                         r.i.intakeShooter();  // Feed next sample
                         try {
-                            Thread.sleep(700);
+                            Thread.sleep(900);
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }

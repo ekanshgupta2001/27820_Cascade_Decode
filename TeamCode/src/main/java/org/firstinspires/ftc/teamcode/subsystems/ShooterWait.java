@@ -29,6 +29,10 @@ public class ShooterWait extends SubsystemBase {
     public static double HDown = 0.15;
     public static double HClose = 0.05;
     public static double HZero = 0.0;
+    private final Timer spinupTimer = new Timer();
+    private boolean justStartedSpinup = false;
+    public static double kI_SPINUP = 0.5;   // High kI during initial spinup
+    public static double kI_STEADY = 0.08;
 
     // PIDF VALUES - These will be tuned via FTC Dashboard
     // kF gets auto-calculated on first run, then you can manually adjust all values
@@ -123,8 +127,15 @@ public class ShooterWait extends SubsystemBase {
     }
 
     public void setTarget(double velocity) {
+        boolean wasInactive = !activate;
         targetVel = velocity;
         activate = (Math.abs(velocity) > 1e-6);
+
+        // If we're starting from stopped, mark as "just started"
+        if (wasInactive && activate) {
+            justStartedSpinup = true;
+            spinupTimer.resetTimer();
+        }
     }
 
     public double getTarget() {
@@ -183,7 +194,13 @@ public class ShooterWait extends SubsystemBase {
 
     @Override
     public void periodic() {
-        // Update PIDF if tuning via dashboard
+        if (justStartedSpinup && spinupTimer.getElapsedTime() < 750) {
+            kI = kI_SPINUP;  // High kI for first 0.75 seconds
+        } else {
+            kI = kI_STEADY;  // Normal kI after that
+            justStartedSpinup = false;
+        }
+
         if (kP != lastCoeffs.p || kI != lastCoeffs.i ||
                 kD != lastCoeffs.d || kF != lastCoeffs.f) {
             updatePIDF();
