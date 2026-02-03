@@ -42,7 +42,7 @@ public class tele2Manual extends OpMode {
 
     // Shooter modes
     private enum ShooterMode { AUTO, MANUAL }
-    private ShooterMode shooterMode = ShooterMode.MANUAL;
+    private ShooterMode shooterMode = ShooterMode.AUTO;
 
     // AUTO mode state machine
     private enum AutoShootState {
