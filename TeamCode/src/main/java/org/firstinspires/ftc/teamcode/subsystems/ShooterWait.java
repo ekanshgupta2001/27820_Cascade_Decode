@@ -106,19 +106,25 @@ public class ShooterWait extends SubsystemBase {
         // This OVERRIDES the motor controller's default PIDF with our custom values
         S.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, lastCoeffs);
     }
+    private void setTargetWithBoost(double velocity) {
+        targetVel = velocity;
+        activate = true;
+        justStartedSpinup = true;
+        spinupTimer.resetTimer();
+    }
 
     public void spinClose() {
-        setTarget(close);
+        setTargetWithBoost(close);
         feedClose();
     }
 
     public void spinMedium() {
-        setTarget(medium);
+        setTargetWithBoost(medium);
         feedDown();
     }
 
     public void spinFar() {
-        setTarget(far);
+        setTargetWithBoost(far);
         feedUp();
     }
 
@@ -127,15 +133,8 @@ public class ShooterWait extends SubsystemBase {
     }
 
     public void setTarget(double velocity) {
-        boolean wasInactive = !activate;
         targetVel = velocity;
         activate = (Math.abs(velocity) > 1e-6);
-
-        // If we're starting from stopped, mark as "just started"
-        if (wasInactive && activate) {
-            justStartedSpinup = true;
-            spinupTimer.resetTimer();
-        }
     }
 
     public double getTarget() {
