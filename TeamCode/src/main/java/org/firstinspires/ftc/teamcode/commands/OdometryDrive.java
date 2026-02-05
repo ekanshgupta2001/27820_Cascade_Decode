@@ -23,7 +23,7 @@ public class OdometryDrive {
     public static double STRAFE_P = 0.06; // Strafe usually needs more power due to friction
     public static double TURN_P = 0.03;
 
-    public static double MAX_POWER = 0.7;
+    public static double MAX_POWER = 0.75;
     public static double POSITION_TOLERANCE = 1.0;  // inches
     public static double ANGLE_TOLERANCE = 2.0;     // degrees
 
@@ -34,10 +34,10 @@ public class OdometryDrive {
         BR = hardwareMap.get(DcMotorEx.class, "BR");
 
         // Directions: Adjust so that positive power = forward movement
-        FL.setDirection(DcMotorSimple.Direction.REVERSE);
-        BL.setDirection(DcMotorSimple.Direction.REVERSE);
-        FR.setDirection(DcMotorSimple.Direction.FORWARD);
-        BR.setDirection(DcMotorSimple.Direction.FORWARD);
+        FL.setDirection(DcMotorSimple.Direction.FORWARD);
+        BL.setDirection(DcMotorSimple.Direction.FORWARD);
+        FR.setDirection(DcMotorSimple.Direction.REVERSE);
+        BR.setDirection(DcMotorSimple.Direction.REVERSE);
 
         FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);

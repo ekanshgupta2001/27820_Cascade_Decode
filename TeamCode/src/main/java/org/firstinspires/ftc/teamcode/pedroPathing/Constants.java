@@ -43,7 +43,7 @@ public class Constants {
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)  //FIXME: Check if in the correct direction
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)  //FIXME: Check if in the correct direction
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);  //FIXME: Check if in the correct direction
 
     public static PathConstraints pathConstraints = new PathConstraints(
