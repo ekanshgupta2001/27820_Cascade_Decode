@@ -64,8 +64,6 @@ public class tele2Manual extends OpMode {
 
     private boolean calibrated = false;
     public double dist = 0.0;
-
-    // Timings for AUTO mode (tunable via dashboard)
     public static double AUTO_SPINUP_MIN_TIME = 1.0;  // Minimum time to spin up
     public static double AUTO_KICK_UP_TIME = 0.25;    // How long kicker stays up
     public static double AUTO_RESET_TIME = 0.4;       // How long to wait before next shot
@@ -155,6 +153,14 @@ public class tele2Manual extends OpMode {
             shooterAutoLogic();
         } else {
             shooterManualLogic();
+        }
+
+        if (operatorGamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5){
+            r.i.shooterinCommand();
+        }
+
+        if(operatorGamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.5){
+            r.s.stopMotor();
         }
 
         // Telemetry
@@ -391,11 +397,6 @@ public class tele2Manual extends OpMode {
                     gamepad2.rumbleBlips(3);  // 3 rumbles = sequence complete
                 }
                 break;
-        }
-
-
-        if (operatorGamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5){
-            r.i.shooterinCommand();
         }
     }
 

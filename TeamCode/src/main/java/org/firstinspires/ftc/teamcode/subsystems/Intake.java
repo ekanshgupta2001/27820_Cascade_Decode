@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 // Import the necessary FTCLib components
 
+import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.seattlesolvers.solverslib.command.Command;
 import com.seattlesolvers.solverslib.command.RunCommand;
@@ -18,6 +19,7 @@ public class Intake extends SubsystemBase {
     public static double in = -0.75;
     public static double shooterSpin = -0.6;
     public static double out = 0.6;
+    public final Timer intakeTimer = new Timer();
 
     public Intake(HardwareMap hardwareMap) {
         i = hardwareMap.get(DcMotorEx.class, "IM");
@@ -33,6 +35,10 @@ public class Intake extends SubsystemBase {
 
     public void spinIn() {
         set(in);
+        //FIXME: ask richard if this could work
+//        if(i.getVelocity() < 1000 && intakeTimer.getElapsedTime > 1500){
+//            set(shooterSpin);
+//        }
     }
 
     public void intakeShooter() {
@@ -45,6 +51,7 @@ public class Intake extends SubsystemBase {
 
     public void spinIdle() {
         set(idle);
+        intakeTimer.resetTimer();
     }
 
     public Command idleCommand() {

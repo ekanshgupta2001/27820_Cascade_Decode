@@ -20,40 +20,30 @@ public class ShooterWait extends SubsystemBase {
     private final Servo AH;     // Adjust hood / feeder servo
     private final Servo KS;     // Kick servo
     private final DcMotorEx S;  // Shooter motor
-    public static double close = 385;
-    public static double far = 600;
-    public static double medium = 480;
+    public static double close = 375;
+    public static double far = 585;
+    public static double medium = 470;
     public static double intakePower = 0.2;
 
     public static double HUp = 0.5;
     public static double HDown = 0.15;
-    public static double HClose = 0.05;
+    public static double HClose = 0.03;
     public static double HZero = 0.0;
     private final Timer spinupTimer = new Timer();
     private boolean justStartedSpinup = false;
-    public static double kI_SPINUP = 0.5;   // High kI during initial spinup
-    public static double kI_STEADY = 0.08;
-
-    // PIDF VALUES - These will be tuned via FTC Dashboard
-    // kF gets auto-calculated on first run, then you can manually adjust all values
+    public static double kI_SPINUP = 0.7;   // High kI during initial spinup
+    public static double kI_STEADY = 0.08;  //Regular kI values for the match
     public static double kP = 24;      // Proportional - how aggressively to correct error   24
     public static double kI = 0.08;      // Integral - eliminates steady-state error    0.08
     public static double kD = 14;      // Derivative - dampens oscillations     kD
     public static double kF = 25.8;      // Feedforward - calculated in constructor, but adjustable after   25.8
 
-    // Set this to true to skip auto-calculation and use manual kF value above
     public static boolean USE_MANUAL_KF = false;
-
-    // Velocity tolerance for "at speed" check (ticks/sec)
     public static double velocityTolerance = 40;
 
     public static double kup = 0.280;
     public static double kdown = 0.0;
-
-    // This is the shooter target velocity we're aiming for.
     private double targetVel = 0;
-
-    // This decides if we're actively trying to control shooter speed.
     public boolean activate = false;
     private final Intake intakeSubsystem;
     private PIDFCoefficients lastCoeffs = new PIDFCoefficients(kP, kI, kD, kF);
@@ -69,7 +59,6 @@ public class ShooterWait extends SubsystemBase {
 
         this.intakeSubsystem = intakeSubsystem;
 
-        // CRITICAL FIX: Use RUN_USING_ENCODER to enable velocity control
         S.setDirection(DcMotorSimple.Direction.REVERSE);
         S.setZeroPowerBehavior(FLOAT);
 
@@ -88,7 +77,6 @@ public class ShooterWait extends SubsystemBase {
             Thread.sleep(50);
 
         } catch (InterruptedException e) {
-            // If interrupted, just continue - not critical
             Thread.currentThread().interrupt();
         }
 
@@ -97,7 +85,6 @@ public class ShooterWait extends SubsystemBase {
 //            calculateFeedforward();
 //        }
 
-        // Apply our custom PIDF coefficients (overrides motor controller defaults)
         updatePIDF();
     }
 

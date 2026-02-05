@@ -11,12 +11,16 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.NonVisionRobot;
+import org.firstinspires.ftc.teamcode.commands.Shoot;
+import org.firstinspires.ftc.teamcode.decode_teleop.tele2Manual;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 
-//@Autonomous
+@Autonomous
 public class redCloseAuto extends LinearOpMode {
     private Follower follower;
+    NonVisionRobot r;
     private Timer pathTimer, actionTimer, opmodeTimer;
     private final ElapsedTime runtime = new ElapsedTime();
     private Shooter s;
@@ -31,6 +35,20 @@ public class redCloseAuto extends LinearOpMode {
     private TelemetryManager telemetryM;
     private DcMotorEx parallelEncoder;
     private DcMotorEx perpendicularEncoder;
+    private enum AutoShootState {
+        IDLE,           // Not shooting
+        SPINNING_UP,    // Flywheel spinning to target velocity
+        READY,          // At velocity, waiting for trigger
+        SHOOTING,       // Kicker up, releasing sample
+        RESETTING,      // Kicker down, feeding next sample
+        COMPLETE        // All 3 shots done
+    }
+    private AutoShootState autoState = AutoShootState.IDLE;
+    private final Timer autoTimer = new Timer();
+    private final Timer intakeTimer = new Timer();
+    public static double AUTO_SPINUP_MIN_TIME = 1.0;  // Minimum time to spin up
+    public static double AUTO_KICK_UP_TIME = 0.25;    // How long kicker stays up
+    public static double AUTO_RESET_TIME = 0.4;
     private double currentPower = 0;
     private double adjustSpeed = 0.5;
     private double intakeDirection = 0.0;
@@ -77,21 +95,29 @@ public class redCloseAuto extends LinearOpMode {
         telemetry.update();
     }
     public void Auto() {
-        hood(0.6);
-        intake(0.5, 400);
+        new Shoot(r);
         move(1300, -0.5);
-        sleep(1000);
-        shoot(0.6, 0.7, 2000);
-        sleep(3000);
-        move(1400, 0.5);
-        intake(-1.0, 2000);
-        sleep(3000);
-        move(1300, -0.5);
-        sleep(1000);
-        shoot(0.5, 0.7, 2000);
-        sleep(3000);
-        moveSideways(0.5, 850);
-        hood(0.0);
+        if (autoTimer.getElapsedTime() > 2500){
+            rotate(400, 0.8);
+            autoTimer.resetTimer();
+            if (autoTimer.getElapsedTime() > 300){
+                move(1000, 0.8);
+                intake(-1.0, 2000);
+                autoTimer.resetTimer();
+                if (autoTimer.getElapsedTime() > 2000){
+                    move(1000, -0.8);
+                    autoTimer.resetTimer();
+                    if (autoTimer.getElapsedTime() > 1000){
+                        rotate(400, -0.8);
+                        new Shoot(r);
+                        autoTimer.resetTimer();
+                        if (autoTimer.getElapsedTime() > 3000){
+                            moveSideways(0.5, 500);
+                        }
+                    }
+                }
+            }
+        }
 
     }
 
@@ -120,19 +146,6 @@ public class redCloseAuto extends LinearOpMode {
         rrMotor.setPower(0);
     }
 
-    public void shoot(double angle, double speed, long time){
-        scoreMotor.setPower(speed);
-        adjustHood.setPosition(angle);
-        sleep(5000);
-        intakeMotor.setPower(-1.0);
-        scoreMotor.setPower(speed);
-        sleep(time);
-
-        intakeMotor.setPower(0.0);
-        adjustHood.setPosition(0.0);
-        scoreMotor.setPower(0.0);
-    }
-
     public void moveSideways(double speed, long time){
         lfMotor.setPower(-speed);
         rfMotor.setPower(speed);
@@ -153,6 +166,24 @@ public class redCloseAuto extends LinearOpMode {
 
         sleep(time);
         intakeMotor.setPower(0.0);
+    }
+
+    public void rotate(long degrees, double power) {
+        telemetry.addData("Current Status", "Rotate");
+        telemetry.update();
+
+        lfMotor.setPower(-power);
+        rfMotor.setPower(-power);
+        lrMotor.setPower(power);
+        rrMotor.setPower(power);
+
+        sleep(degrees);
+
+        lfMotor.setPower(0);
+        rfMotor.setPower(0);
+        lrMotor.setPower(0);
+        rrMotor.setPower(0);
+
     }
 
     public void hood(double angle){
