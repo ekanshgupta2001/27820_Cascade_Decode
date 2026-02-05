@@ -21,12 +21,12 @@ import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.ShooterWait;
 
 @Autonomous
-public class pinBlueClose extends LinearOpMode {
+public class pinRedClose extends LinearOpMode {
     private Follower follower;
     NonVisionRobot r;
     private OdometryDrive drive;
     private ShooterWait shooter;
-//    private enum AutoShootState {
+    //    private enum AutoShootState {
 //        IDLE,           // Not shooting
 //        SPINNING_UP,    // Flywheel spinning to target velocity
 //        READY,          // At velocity, waiting for trigger

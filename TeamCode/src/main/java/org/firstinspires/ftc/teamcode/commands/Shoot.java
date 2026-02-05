@@ -149,6 +149,6 @@ public class Shoot extends CommandBase {
     public void end(boolean interrupted) {
         r.i.spinIdle();
         r.s.kickDown();
-        r.s.setTarget(150);
+        r.s.setTarget(290);
     }
 }
