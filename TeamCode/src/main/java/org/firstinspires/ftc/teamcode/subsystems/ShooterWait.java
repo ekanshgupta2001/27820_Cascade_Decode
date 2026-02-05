@@ -31,8 +31,14 @@ public class ShooterWait extends SubsystemBase {
     public static double HZero = 0.0;
     private final Timer spinupTimer = new Timer();
     private boolean justStartedSpinup = false;
-    public static double kI_SPINUP = 0.7;   // High kI during initial spinup
-    public static double kI_STEADY = 0.08;  //Regular kI values for the match
+    public static double kP_SPINUP = 40;    // Much higher P during spinup
+    public static double kP_STEADY = 24;
+    public static double kI_SPINUP = 1.2;
+    public static double kI_STEADY = 0.08;
+    public static double kD_SPINUP = 20;    // Higher D to prevent overshoot
+    public static double kD_STEADY = 14;
+    public static double SPINUP_DURATION_MS = 1200;
+    private boolean isInSpinupMode = false;
     public static double kP = 24;      // Proportional - how aggressively to correct error   24
     public static double kI = 0.08;      // Integral - eliminates steady-state error    0.08
     public static double kD = 14;      // Derivative - dampens oscillations     kD
@@ -180,16 +186,23 @@ public class ShooterWait extends SubsystemBase {
 
     @Override
     public void periodic() {
-        if (justStartedSpinup && spinupTimer.getElapsedTime() < 750) {
-            kI = kI_SPINUP;  // High kI for first 0.75 seconds
+        double currentKP, currentKI, currentKD;
+        if (isInSpinupMode && spinupTimer.getElapsedTime() < SPINUP_DURATION_MS) {
+            currentKP = kP_SPINUP;
+            currentKI = kI_SPINUP;
+            currentKD = kD_SPINUP;
         } else {
-            kI = kI_STEADY;  // Normal kI after that
-            justStartedSpinup = false;
+            currentKP = kP_STEADY;
+            currentKI = kI_STEADY;
+            currentKD = kD_STEADY;
+            isInSpinupMode = false;
         }
 
-        if (kP != lastCoeffs.p || kI != lastCoeffs.i ||
-                kD != lastCoeffs.d || kF != lastCoeffs.f) {
-            updatePIDF();
+        // Update PIDF if any value changed
+        if (currentKP != lastCoeffs.p || currentKI != lastCoeffs.i ||
+                currentKD != lastCoeffs.d || kF != lastCoeffs.f) {
+            lastCoeffs = new PIDFCoefficients(currentKP, currentKI, currentKD, kF);
+            S.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, lastCoeffs);
         }
 
         if (activate) {

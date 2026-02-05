@@ -1,212 +1,134 @@
-//package org.firstinspires.ftc.teamcode.commands;
-//
-//import com.acmerobotics.dashboard.config.Config;
-//import com.pedropathing.geometry.Pose;
-//import com.pedropathing.util.Timer;
-//import com.qualcomm.robotcore.hardware.DcMotorEx;
-//import com.qualcomm.robotcore.hardware.HardwareMap;
-//import com.seattlesolvers.solverslib.command.CommandBase;
-//
-//import org.firstinspires.ftc.teamcode.NonVisionRobot;
-//
-//@Config
-//public class OdometryDrive extends CommandBase {
-//
-//    private final NonVisionRobot r;
-//    private final HardwareMap hardwareMap;
-//    private final Timer timeoutTimer = new Timer();
-//
-//    private final Pose targetPose;  // Where we want to go
-//    private final double maxPower;
-//    private final double timeoutSeconds;
-//    private final boolean maintainHeading;  // Keep current heading or turn to target?
-//
-//    // Motor references
-//    private DcMotorEx frontLeft, frontRight, backLeft, backRight;
-//
-//    // TUNE THESE values
-//    public static double POSITION_TOLERANCE = 2.0;    // inches - how close is "close enough"
-//    public static double HEADING_TOLERANCE = 5.0;     // degrees
-//    public static double MIN_POWER = 0.1;             // Minimum power to move
-//    public static double HEADING_kP = 0.02;           // Turn correction strength
-//    public static double SLOW_DOWN_DISTANCE = 12.0;   // Start slowing down 12" before target
-//
-//    /**
-//     * Drive to a target position using odometry
-//     * @param r Robot
-//     * @param hardwareMap Hardware map for motor access
-//     * @param targetX Target X coordinate (inches)
-//     * @param targetY Target Y coordinate (inches)
-//     * @param targetHeading Target heading (degrees), or -999 to maintain current heading
-//     * @param maxPower Maximum drive power
-//     * @param timeoutSeconds Safety timeout
-//     */
-//    public OdometryDrive(NonVisionRobot r, HardwareMap hardwareMap, double targetX, double targetY,
-//                         double targetHeading, double maxPower, double timeoutSeconds) {
-//        this.r = r;
-//        this.hardwareMap = hardwareMap;
-//        this.targetPose = new Pose(targetX, targetY, Math.toRadians(targetHeading));
-//        this.maxPower = Math.abs(maxPower);
-//        this.timeoutSeconds = timeoutSeconds;
-//        this.maintainHeading = (targetHeading == -999);
-//    }
-//
-//    // Convenience constructors
-//
-//    /** Drive to position, maintain current heading */
-//    public static OdometryDrive toPosition(NonVisionRobot r, HardwareMap hw,
-//                                           double x, double y, double power) {
-//        return new OdometryDrive(r, hw, x, y, -999, power, 10.0);
-//    }
-//
-//    /** Drive to position with specific heading */
-//    public static OdometryDrive toPose(NonVisionRobot r, HardwareMap hw,
-//                                       double x, double y, double headingDegrees, double power) {
-//        return new OdometryDrive(r, hw, x, y, headingDegrees, power, 10.0);
-//    }
-//
-//    /** Drive forward relative to current position */
-//    public static OdometryDrive forward(NonVisionRobot r, HardwareMap hw,
-//                                        double inches, double power) {
-//        Pose current = r.follower.getPose();
-//        double targetX = current.getX() + inches * Math.cos(current.getHeading());
-//        double targetY = current.getY() + inches * Math.sin(current.getHeading());
-//        return new OdometryDrive(r, hw, targetX, targetY, -999, power, 10.0);
-//    }
-//
-//    /** Strafe right relative to current position */
-//    public static OdometryDrive strafeRight(NonVisionRobot r, HardwareMap hw,
-//                                            double inches, double power) {
-//        Pose current = r.follower.getPose();
-//        double targetX = current.getX() + inches * Math.cos(current.getHeading() - Math.PI/2);
-//        double targetY = current.getY() + inches * Math.sin(current.getHeading() - Math.PI/2);
-//        return new OdometryDrive(r, hw, targetX, targetY, -999, power, 10.0);
-//    }
-//
-//    @Override
-//    public void initialize() {
-//        // Get motor references from hardwareMap
-//        frontLeft = hardwareMap.get(DcMotorEx.class, "FL");
-//        frontRight = hardwareMap.get(DcMotorEx.class, "FR");
-//        backLeft = hardwareMap.get(DcMotorEx.class, "BL");
-//        backRight = hardwareMap.get(DcMotorEx.class, "BR");
-//
-//        timeoutTimer.resetTimer();
-//    }
-//
-//    @Override
-//    public void execute() {
-//        // Update odometry
-//        r.follower.update();
-//
-//        // Get current pose
-//        Pose currentPose = r.follower.getPose();
-//
-//        // Calculate error (how far we are from target)
-//        double deltaX = targetPose.getX() - currentPose.getX();
-//        double deltaY = targetPose.getY() - currentPose.getY();
-//        double distance = Math.hypot(deltaX, deltaY);
-//
-//        // Calculate angle to target (in robot frame)
-//        double angleToTarget = Math.atan2(deltaY, deltaX);
-//        double robotHeading = currentPose.getHeading();
-//        double relativeAngle = angleToTarget - robotHeading;
-//
-//        // Normalize angle to -π to π
-//        while (relativeAngle > Math.PI) relativeAngle -= 2 * Math.PI;
-//        while (relativeAngle < -Math.PI) relativeAngle += 2 * Math.PI;
-//
-//        // Calculate drive components (in robot frame)
-//        double forward = Math.cos(relativeAngle);
-//        double strafe = Math.sin(relativeAngle);
-//
-//        // Calculate heading correction
-//        double turn = 0;
-//        if (!maintainHeading) {
-//            double headingError = targetPose.getHeading() - robotHeading;
-//            while (headingError > Math.PI) headingError -= 2 * Math.PI;
-//            while (headingError < -Math.PI) headingError += 2 * Math.PI;
-//            turn = headingError * HEADING_kP;
-//        }
-//
-//        // Calculate power with ramp-down near target
-//        double power;
-//        if (distance < POSITION_TOLERANCE) {
-//            forward = 0;
-//            strafe = 0;
-//        } else {
-//            forward *= power;
-//            strafe *= power;
-//        }
-//
-//        // Scale drive components by power and distance
-//        forward *= power;
-//        strafe *= power;
-//
-//        // If very close, reduce drive power but keep turn correction
-//        if (distance < POSITION_TOLERANCE) {
-//            forward *= 0.1;
-//            strafe *= 0.1;
-//        }
-//
-//        // Calculate motor powers (mecanum drive equations)
-//        double frontLeftPower = forward + strafe + turn;
-//        double frontRightPower = forward - strafe - turn;
-//        double backLeftPower = forward - strafe + turn;
-//        double backRightPower = forward + strafe - turn;
-//
-//        // Normalize powers if any exceed 1.0
-//        double maxMotorPower = Math.max(
-//                Math.max(Math.abs(frontLeftPower), Math.abs(frontRightPower)),
-//                Math.max(Math.abs(backLeftPower), Math.abs(backRightPower))
-//        );
-//
-//        if (maxMotorPower > 1.0) {
-//            frontLeftPower /= maxMotorPower;
-//            frontRightPower /= maxMotorPower;
-//            backLeftPower /= maxMotorPower;
-//            backRightPower /= maxMotorPower;
-//        }
-//
-//        // Apply powers
-//        frontLeft.setPower(frontLeftPower);
-//        frontRight.setPower(frontRightPower);
-//        backLeft.setPower(backLeftPower);
-//        backRight.setPower(backRightPower);
-//    }
-//
-//    @Override
-//    public boolean isFinished() {
-//        // Update odometry one last time
-//        r.follower.update();
-//        Pose currentPose = r.follower.getPose();
-//
-//        // Calculate position error
-//        double deltaX = targetPose.getX() - currentPose.getX();
-//        double deltaY = targetPose.getY() - currentPose.getY();
-//        double distance = Math.hypot(deltaX, deltaY);
-//
-//        // Calculate heading error (if we care about it)
-//        boolean headingGood = true;
-//        if (!maintainHeading) {
-//            double headingError = Math.toDegrees(targetPose.getHeading() - currentPose.getHeading());
-//            while (headingError > 180) headingError -= 360;
-//            while (headingError < -180) headingError += 360;
-//            headingGood = Math.abs(headingError) < HEADING_TOLERANCE;
-//        }
-//
-//        boolean positionGood = distance < POSITION_TOLERANCE;
-//        boolean timedOut = timeoutTimer.getElapsedTime() >= timeoutSeconds;
-//
-//        return (positionGood && headingGood) || timedOut;
-//    }
-//
-//    @Override
-//    public void end(boolean interrupted) {
-//        // Stop all motors
-//        frontLeft.setPower(0);
-//        frontRight.setPower(0);
-//        backLeft.setPower(0);
-//        backRight.setPower(0);
-//    }
-//}
+package org.firstinspires.ftc.teamcode.commands;
+
+import com.acmerobotics.dashboard.config.Config;
+import com.pedropathing.geometry.Pose;
+import com.pedropathing.util.Timer;
+import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.util.ElapsedTime;
+import com.seattlesolvers.solverslib.command.CommandBase;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.NonVisionRobot;
+
+@Config
+public class OdometryDrive {
+    private DcMotor FL, FR, BL, BR;
+    private GoBildaPinpointDriver pinpoint;
+
+    // Tune these with FTC Dashboard
+    public static double DRIVE_P = 0.05;
+    public static double STRAFE_P = 0.05;
+    public static double TURN_P = 0.02;
+
+    public static double DRIVE_POWER = 0.5;  // Max power for driving
+    public static double POSITION_TOLERANCE = 1.0;  // inches
+    public static double ANGLE_TOLERANCE = 2.0;     // degrees
+
+    public OdometryDrive(HardwareMap hardwareMap) {
+        FL = hardwareMap.get(DcMotor.class, "FL");
+        FR = hardwareMap.get(DcMotor.class, "FR");
+        BL = hardwareMap.get(DcMotor.class, "BL");
+        BR = hardwareMap.get(DcMotor.class, "BR");
+
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
+        pinpoint.setOffsets(3.5, 3.5, DistanceUnit.INCH);
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
+        pinpoint.setEncoderDirections(
+                GoBildaPinpointDriver.EncoderDirection.FORWARD,
+                GoBildaPinpointDriver.EncoderDirection.FORWARD
+        );
+        pinpoint.resetPosAndIMU();
+
+        // Set motor directions - ADJUST IF NEEDED
+        FL.setDirection(DcMotorSimple.Direction.FORWARD);
+        BL.setDirection(DcMotorSimple.Direction.FORWARD);
+        FR.setDirection(DcMotorSimple.Direction.REVERSE);
+        BR.setDirection(DcMotorSimple.Direction.REVERSE);
+
+        FL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        FR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        BR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    }
+
+    public void setStartPosition(double startX, double startY, double startHeading) {
+        pinpoint.setPosition(new Pose2D(
+                DistanceUnit.INCH, startX, startY,
+                AngleUnit.DEGREES, startHeading
+        ));
+    }
+
+    public void driveToPosition(double targetX, double targetY, double targetHeading, double timeoutSeconds) {
+        ElapsedTime timer = new ElapsedTime();
+
+        while (timer.seconds() < timeoutSeconds) {
+            pinpoint.update();
+
+            double currentX = pinpoint.getPosition().getX(DistanceUnit.INCH);
+            double currentY = pinpoint.getPosition().getY(DistanceUnit.INCH);
+            double currentHeading = Math.toDegrees(pinpoint.getPosition().getHeading(AngleUnit.RADIANS));
+
+            double errorX = targetX - currentX;
+            double errorY = targetY - currentY;
+            double errorHeading = targetHeading - currentHeading;
+
+            // Normalize heading error to -180 to 180
+            while (errorHeading > 180) errorHeading -= 360;
+            while (errorHeading < -180) errorHeading += 360;
+
+            // Check if we're at target
+            if (Math.abs(errorX) < POSITION_TOLERANCE &&
+                    Math.abs(errorY) < POSITION_TOLERANCE &&
+                    Math.abs(errorHeading) < ANGLE_TOLERANCE) {
+                break;
+            }
+
+            // Calculate powers with P control
+            double xPower = errorX * STRAFE_P;
+            double yPower = errorY * DRIVE_P;
+            double turnPower = errorHeading * TURN_P;
+
+            // Clip powers
+            xPower = Math.max(-DRIVE_POWER, Math.min(DRIVE_POWER, xPower));
+            yPower = Math.max(-DRIVE_POWER, Math.min(DRIVE_POWER, yPower));
+            turnPower = Math.max(-DRIVE_POWER, Math.min(DRIVE_POWER, turnPower));
+
+            // Mecanum drive kinematics
+            double FLPower = yPower + xPower + turnPower;
+            double FRPower = yPower - xPower - turnPower;
+            double BLPower = yPower - xPower + turnPower;
+            double BRPower = yPower + xPower - turnPower;
+
+            // Normalize if any power exceeds 1.0
+            double maxPower = Math.max(Math.max(Math.abs(FLPower), Math.abs(FRPower)),
+                    Math.max(Math.abs(BLPower), Math.abs(BRPower)));
+            if (maxPower > 1.0) {
+                FLPower /= maxPower;
+                FRPower /= maxPower;
+                BLPower /= maxPower;
+                BRPower /= maxPower;
+            }
+
+            FL.setPower(FLPower);
+            FR.setPower(FRPower);
+            BL.setPower(BLPower);
+            BR.setPower(BRPower);
+        }
+
+        // Stop motors
+        stopMotors();
+    }
+
+    public void stopMotors() {
+        FL.setPower(0);
+        FR.setPower(0);
+        BL.setPower(0);
+        BR.setPower(0);
+    }
+}
