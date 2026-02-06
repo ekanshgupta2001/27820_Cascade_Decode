@@ -20,14 +20,14 @@ public class ShooterWait extends SubsystemBase {
     private final Servo AH;     // Adjust hood / feeder servo
     private final Servo KS;     // Kick servo
     private final DcMotorEx S;  // Shooter motor
-    public static double close = 375;
+    public static double close = 355;
     public static double far = 585;
     public static double medium = 470;
     public static double intakePower = 0.2;
 
     public static double HUp = 0.5;
     public static double HDown = 0.15;
-    public static double HClose = 0.03;
+    public static double HClose = 0.00;
     public static double HZero = 0.0;
     private final Timer spinupTimer = new Timer();
     private boolean justStartedSpinup = false;
@@ -173,14 +173,14 @@ public class ShooterWait extends SubsystemBase {
 
     // CLEANED UP: Removed unused distanceX parameter
     public void forDistance(double distanceY) {
-        if (distanceY <= 40) spinClose();
-        else if (distanceY <= 80) spinMedium();
+        if (distanceY <= 50) spinClose();
+        else if (distanceY <= 90) spinMedium();
         else spinFar();
     }
 
     @Override
     public void periodic() {
-        if (justStartedSpinup && spinupTimer.getElapsedTime() < 750) {
+        if (justStartedSpinup && spinupTimer.getElapsedTime() < 900) {
             kI = kI_SPINUP;  // High kI for first 0.75 seconds
         } else {
             kI = kI_STEADY;  // Normal kI after that
