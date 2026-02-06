@@ -31,7 +31,7 @@ public class ShooterWait extends SubsystemBase {
     public static double HZero = 0.0;
     private final Timer spinupTimer = new Timer();
     private boolean justStartedSpinup = false;
-    public static double kI_SPINUP = 1.5;   // High kI during initial spinup
+    public static double kI_SPINUP = 2.5;   // High kI during initial spinup
     public static double kI_STEADY = 0.08;  //Regular kI values for the match
     public static double kP = 24;      // Proportional - how aggressively to correct error   24
     public static double kI = 0.08;      // Integral - eliminates steady-state error    0.08
@@ -66,9 +66,9 @@ public class ShooterWait extends SubsystemBase {
         try {
             S.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             S.setPower(0);
-            Thread.sleep(100);
+            Thread.sleep(25);
             S.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            Thread.sleep(100);
+            Thread.sleep(25);
             S.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
             // Zero PIDF first to clear any integral buildup
@@ -96,6 +96,8 @@ public class ShooterWait extends SubsystemBase {
     private void setTargetWithBoost(double velocity) {
         targetVel = velocity;
         activate = true;
+        S.setPIDFCoefficients(DcMotor.RunMode.RUN_USING_ENCODER,
+                new PIDFCoefficients(kP, 0, kD, kF));
         justStartedSpinup = true;
         spinupTimer.resetTimer();
     }
@@ -135,6 +137,7 @@ public class ShooterWait extends SubsystemBase {
     public void stopMotor() {
         setTarget(0);
         activate = false;
+        S.setVelocity(0);
         S.setPower(0);
     }
 

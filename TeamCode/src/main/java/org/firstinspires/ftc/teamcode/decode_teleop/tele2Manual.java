@@ -49,7 +49,8 @@ public class tele2Manual extends OpMode {
         IDLE,           // Not shooting
         SPINNING_UP,    // Flywheel spinning to target velocity
         READY,          // At velocity, waiting for trigger
-        SHOOTING,       // Kicker up, releasing sample
+        SHOOTING, // Kicker up, releasing sample
+        FEEDING,
         RESETTING,      // Kicker down, feeding next sample
         COMPLETE        // All 3 shots done
     }
@@ -67,6 +68,7 @@ public class tele2Manual extends OpMode {
     public static double AUTO_SPINUP_MIN_TIME = 1.0;  // Minimum time to spin up
     public static double AUTO_KICK_UP_TIME = 0.25;    // How long kicker stays up
     public static double AUTO_RESET_TIME = 0.4;       // How long to wait before next shot
+    public static double AUTO_FEED_TIME = 1.2;
     public static double LIGHT_READY_COLOR = 0.500;   // Green when ready
     public static double LIGHT_SHOOTING_COLOR = 0.388; // Different color while shooting
     public static int MAX_SHOTS = 3;                   // Total samples to shoot
@@ -156,7 +158,7 @@ public class tele2Manual extends OpMode {
         }
 
         if (operatorGamepad.getTrigger(GamepadKeys.Trigger.RIGHT_TRIGGER) > 0.5){
-            r.i.shooterinCommand();
+            r.i.intakeShooter();
         }
 
         if(operatorGamepad.getTrigger(GamepadKeys.Trigger.LEFT_TRIGGER) > 0.5){
@@ -292,7 +294,7 @@ public class tele2Manual extends OpMode {
                 if (operatorGamepad.wasJustPressed(GamepadKeys.Button.A)) {
                     r.s.forDistance(dist);  // Set target based on distance
                     r.s.kickDown();            // Ensure kicker is down
-                    r.i.spinIdle();
+                    r.i.intakeShooter();
                     shotsRemaining = MAX_SHOTS;
                     autoState = AutoShootState.SPINNING_UP;
                     autoTimer.resetTimer();
@@ -329,13 +331,13 @@ public class tele2Manual extends OpMode {
 
                 // Automatically start shooting after brief delay (or immediately)
                 // You can add a delay here if you want drivers to have a moment
-                if (elapsed >= 0.3) {  // 0.3 second delay before auto-shooting
+                if (elapsed >= 0.1) {  // 0.3 second delay before auto-shooting
                     r.s.kickUp();
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
+//                    try {
+//                        Thread.sleep(200);
+//                    } catch (InterruptedException e) {
+//                        throw new RuntimeException(e);
+//                    }
                     autoState = AutoShootState.SHOOTING;
                     autoTimer.resetTimer();
                     setLightPos(LIGHT_SHOOTING_COLOR);
@@ -352,29 +354,16 @@ public class tele2Manual extends OpMode {
                 if (elapsed >= AUTO_KICK_UP_TIME) {
                     r.s.kickDown();
                     shotsRemaining--;
-                    try {
-                        Thread.sleep(200);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
 
-                    // Check if we're done or need to continue
                     if (shotsRemaining <= 0) {
                         autoState = AutoShootState.COMPLETE;
-                        autoTimer.resetTimer();
                     } else {
-                        r.i.intakeShooter();  // Feed next sample
-                        try {
-                            Thread.sleep(900);
-                        } catch (InterruptedException e) {
-                            throw new RuntimeException(e);
-                        }
+                        r.i.intakeShooter();
                         autoState = AutoShootState.RESETTING;
-                        autoTimer.resetTimer();
                     }
+                    autoTimer.resetTimer();
                 }
                 break;
-
             case RESETTING:
                 // Keep flywheel at speed
                 r.s.forDistance(dist);

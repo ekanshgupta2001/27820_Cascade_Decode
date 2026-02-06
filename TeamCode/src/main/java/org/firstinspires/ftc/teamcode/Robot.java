@@ -70,6 +70,7 @@ public class Robot {
         follower.update();
         w.periodic();
         s.periodic();
+        i.periodic();
     }
 
     public void stop() {
